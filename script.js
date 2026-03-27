@@ -50,7 +50,7 @@ const i18n = {
     ko: {
         title: "해와 달 지도",
         loc_fetching: "위치 정보를 가져오는 중...",
-        help_text: "지도를 <b>좌클릭</b>하면 그 자리가 기준점(내 위치)이 됩니다. 지도 <b>우클릭(모바일 롱터치)</b> 시 기준점에서 목표 지점까지의 선과 다중 핀이 꽂힙니다.",
+        help_text: "🗺️ <b>지도 조작 가이드</b><br>📍 <b>좌클릭</b>: 원하는 지점을 클릭하면 그곳이 분석의 <b>기준점</b>(내 위치)이 됩니다.<br>🎯 <b>우클릭 / 롱터치</b>: 기준점 설정 후 다른 곳을 조작하면 <b>목표 지점</b>까지의 직선과 방위각 핀이 생성됩니다.<br>✨ 기준점을 먼저 세워야 목표 핀을 꽂을 수 있습니다!",
         date_select: "날짜 선택",
         map_display_settings: "지도 궤적 표시 설정",
         sun_track: "☀️ 태양 궤적 (일출/일몰)",
@@ -94,12 +94,13 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "위치 설정",
         language_settings: "언어 설정",
-        toggle_permanent: "해/달 위치정보 항상 표시"
+        toggle_permanent: "해/달 위치정보 항상 표시",
+        pin_label_prefix: "기준점 "
     },
     en: {
         title: "Sun & Moon Map",
         loc_fetching: "Fetching location...",
-        help_text: "<b>Left-click</b> to set anchor. <b>Right-click (long press on mobile)</b> to drop target pins and lines.",
+        help_text: "🗺️ <b>Map Guide</b><br>📍 <b>Left-click</b> to set your <b>anchor point</b> (base location).<br>🎯 <b>Right-click / Long-press</b> to drop target pins and see <b>bearing lines</b> from your anchor.<br>✨ Set an anchor point first before adding targets!",
         date_select: "Select Date",
         map_display_settings: "Map Settings",
         sun_track: "☀️ Sun Track (Rise/Set)",
@@ -143,12 +144,13 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "Location Settings",
         language_settings: "Language Settings",
-        toggle_permanent: "Always show Sun/Moon position"
+        toggle_permanent: "Always show Sun/Moon position",
+        pin_label_prefix: "Point "
     },
     ja: {
         title: "太陽と月の地図",
         loc_fetching: "位置情報を取得中...",
-        help_text: "地図を<b>左クリック</b>で基準点を設定。<b>右クリック（モバイルは長押し）</b>でピンを追加。",
+        help_text: "🗺️ <b>操作ガイド</b><br>📍 <b>左クリック</b>: 地図上の地点をクリックして<b>基準点</b>（自分の位置）を設定します。<br>🎯 <b>右クリック / 長押し</b>: 基準点から<b>目標地点</b>までの直線と方位角を確認できるピンを追加します。<br>✨ 最初に基準点を設定してから目標ピンを追加してください。",
         date_select: "日付を選択",
         map_display_settings: "マップ表示設定",
         sun_track: "☀️ 太陽の軌跡",
@@ -192,12 +194,13 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "位置設定",
         language_settings: "言語設定",
-        toggle_permanent: "太陽/月の位置情報を常に表示"
+        toggle_permanent: "太陽/月の位置情報を常に表示",
+        pin_label_prefix: "基準点 "
     },
     zh: {
         title: "日月地图",
         loc_fetching: "正在获取位置...",
-        help_text: "<b>左键单击</b>以设置基准点。<b>右键单击（或长按）</b>可放置目标引脚。",
+        help_text: "🗺️ <b>操作指南</b><br>📍 <b>左键单击</b>: 在地图上点击以设置<b>基准点</b>（我的位置）。<br>🎯 <b>右键单击 / 长按</b>: 设置目标点并查看从基准点出发的<b>方位线</b>和引脚。<br>✨ 请先设置基准点，然后再添加目标点！",
         date_select: "选择日期",
         map_display_settings: "显示设置",
         sun_track: "☀️ 太阳轨迹",
@@ -241,12 +244,13 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "位置设置",
         language_settings: "语言设置",
-        toggle_permanent: "始终显示日/月位置信息"
+        toggle_permanent: "始终显示日/月位置信息",
+        pin_label_prefix: "目标点 "
     },
     fr: {
         title: "Carte Soleil & Lune",
         loc_fetching: "Récupération...",
-        help_text: "<b>Clic-gauche</b> fixe l'origine. <b>Clic-droit (appui long)</b> place une cible.",
+        help_text: "🗺️ <b>Guide de la carte</b><br>📍 <b>Clic-gauche</b> : Cliquez pour définir votre <b>point d'origine</b> (ma position).<br>🎯 <b>Clic-droit / Appui long</b> : Ajoutez des cibles pour voir la <b>ligne de visée</b> et l'azimut depuis l'origine.<br>✨ Définissez d'abord une origine avant d'ajouter des cibles !",
         date_select: "Date",
         map_display_settings: "Affichage",
         sun_track: "☀️ Trajectoire Solaire",
@@ -290,7 +294,8 @@ const i18n = {
         footer_license_prefix: "Sous licence ",
         location_settings: "Paramètres de localisation",
         language_settings: "Paramètres de langue",
-        toggle_permanent: "Toujours afficher position Soleil/Lune"
+        toggle_permanent: "Toujours afficher position Soleil/Lune",
+        pin_label_prefix: "Point "
     }
 };
 
@@ -618,16 +623,39 @@ function redrawAll() {
         const p2 = map.project([pin.lat, pin.lng]);
         const bearing = (Math.atan2(p2.x - p1.x, p1.y - p2.y) * 180 / Math.PI + 360) % 360;
 
-        marker.on('click', () => removeTargetPin(pin.id));
-        marker.on('contextmenu', () => removeTargetPin(pin.id));
-        marker.bindTooltip(`${t.pin_aim}${bearing.toFixed(1)}°<br><small>${t.pin_del}</small>`, { direction: 'top' });
-        L.polyline([[state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng], [pin.lat, pin.lng]], { color: '#32CD32', weight: 2, opacity: 0.9, dashArray: '4, 8' }).addTo(extraPinsGroup);
+        const labelHtml = `<div class="target-pin-label" style="background: #32CD32; color: white; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 3px 8px rgba(0,0,0,0.4); pointer-events: auto; cursor: pointer; border: 2px solid white; white-space: nowrap; display: inline-block;">${t.pin_label_prefix}${pin.index} (${bearing.toFixed(1)}°)</div>`;
+        
+        const labelMarker = L.marker([pin.lat, pin.lng], {
+            icon: L.divIcon({
+                className: 'transparent-icon',
+                html: labelHtml,
+                iconAnchor: [30, 48],
+                iconSize: null
+            })
+        }).addTo(extraPinsGroup);
+
+        const deleteHandler = (e) => { L.DomEvent.stopPropagation(e); removeTargetPin(pin.id); };
+        marker.on('click', deleteHandler);
+        labelMarker.on('click', deleteHandler);
+        
+        marker.bindTooltip(`${t.pin_aim}${bearing.toFixed(1)}°`, { direction: 'top' });
+        L.polyline([[state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng], [pin.lat, pin.lng]], { color: '#32CD32', weight: 2, opacity: 0.7, dashArray: '4, 8' }).addTo(extraPinsGroup);
     });
 }
 
 function removeTargetPin(id) {
     state.targetPins = state.targetPins.filter(p => p.id !== id);
     redrawAll();
+}
+
+function getNextPinIndex() {
+    const indices = state.targetPins.map(p => p.index).sort((a, b) => a - b);
+    let next = 1;
+    for (let idx of indices) {
+        if (idx === next) next++;
+        else if (idx > next) break;
+    }
+    return next;
 }
 
 let geocodeTimeout;
@@ -836,7 +864,8 @@ function initEventListeners() {
     map.on('click', (e) => setAnchor(e.latlng));
     map.on('contextmenu', (e) => {
         if (!state.mainAnchorLatLng) { alert(i18n[state.currentLang].err_click_first); return; }
-        state.targetPins.push({ lat: e.latlng.lat, lng: e.latlng.lng, id: Date.now() });
+        const nextIdx = getNextPinIndex();
+        state.targetPins.push({ lat: e.latlng.lat, lng: e.latlng.lng, id: Date.now(), index: nextIdx });
         redrawAll();
     });
     map.on('zoomend', () => state.mainAnchorLatLng && redrawAll());
