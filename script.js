@@ -6,6 +6,7 @@ const R_EARTH = 6371;
 const elements = {
     get chkDay() { return document.getElementById('chk-day'); },
     get chkMoon() { return document.getElementById('chk-moon'); },
+    get chkPermanent() { return document.getElementById('chk-permanent'); },
     get datePicker() { return document.getElementById('date-picker'); },
     get dateValue() { return document.getElementById('date-value'); },
     get dateDay() { return document.getElementById('date-day'); },
@@ -40,7 +41,8 @@ const state = {
     targetPins: [],
     hoverTimeData: [],
     drawDistKm: 2000,
-    radiusKm: 10
+    radiusKm: 10,
+    showPermanentTooltips: true
 };
 
 // --- i18n Data ---
@@ -91,7 +93,8 @@ const i18n = {
         footer_all_rights: "All rights reserved.",
         footer_license_prefix: "Licensed under the ",
         location_settings: "위치 설정",
-        language_settings: "언어 설정"
+        language_settings: "언어 설정",
+        toggle_permanent: "해/달 위치정보 항상 표시"
     },
     en: {
         title: "Sun & Moon Map",
@@ -139,7 +142,8 @@ const i18n = {
         footer_all_rights: "All rights reserved.",
         footer_license_prefix: "Licensed under the ",
         location_settings: "Location Settings",
-        language_settings: "Language Settings"
+        language_settings: "Language Settings",
+        toggle_permanent: "Always show Sun/Moon position"
     },
     ja: {
         title: "太陽と月の地図",
@@ -187,7 +191,8 @@ const i18n = {
         footer_all_rights: "All rights reserved.",
         footer_license_prefix: "Licensed under the ",
         location_settings: "位置設定",
-        language_settings: "言語設定"
+        language_settings: "言語設定",
+        toggle_permanent: "太陽/月の位置情報を常に表示"
     },
     zh: {
         title: "日月地图",
@@ -235,7 +240,8 @@ const i18n = {
         footer_all_rights: "All rights reserved.",
         footer_license_prefix: "Licensed under the ",
         location_settings: "位置设置",
-        language_settings: "语言设置"
+        language_settings: "语言设置",
+        toggle_permanent: "始终显示日/月位置信息"
     },
     fr: {
         title: "Carte Soleil & Lune",
@@ -283,7 +289,8 @@ const i18n = {
         footer_all_rights: "All rights reserved.",
         footer_license_prefix: "Sous licence ",
         location_settings: "Paramètres de localisation",
-        language_settings: "Paramètres de langue"
+        language_settings: "Paramètres de langue",
+        toggle_permanent: "Toujours afficher position Soleil/Lune"
     }
 };
 
@@ -326,11 +333,26 @@ function formatTime(dateObject) {
 function getDisplayTimeStr(timestamp, baseTimestamp, showMinutes = false) {
     const d = new Date(timestamp);
     const base = new Date(baseTimestamp);
-    const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const bDate = new Date(base.getFullYear(), base.getMonth(), base.getDate());
-    const dayDiff = Math.abs(dDate.getTime() - bDate.getTime()) < 1000 ? 0 : Math.round((dDate - bDate) / 86400000);
-    const displayHour = d.getHours() + (dayDiff * 24);
-    const mm = String(d.getMinutes()).padStart(2, '0');
+    
+    // Estimate local timezone offset based on longitude (15 deg = 1 hour)
+    let utcOffset = 0;
+    if (state.mainAnchorLatLng) {
+        utcOffset = Math.round(state.mainAnchorLatLng.lng / 15);
+    } else {
+        // Fallback to browser timezone if no anchor
+        utcOffset = -d.getTimezoneOffset() / 60;
+    }
+
+    const totalHours = (d.getUTCHours() + utcOffset + 24) % 24;
+    const baseTotalHours = (base.getUTCHours() + utcOffset + 24) % 24;
+
+    const dZero = new Date(d); dZero.setUTCHours(0,0,0,0);
+    const bZero = new Date(base); bZero.setUTCHours(0,0,0,0);
+    const dayDiff = Math.round((dZero - bZero) / 86400000);
+    
+    const displayHour = totalHours + (dayDiff * 24);
+    const mm = String(d.getUTCMinutes()).padStart(2, '0');
+
     if (showMinutes) return displayHour + ':' + mm;
     return displayHour + i18n[state.currentLang].hour_suffix;
 }
@@ -493,7 +515,7 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
     const drawPos = (pos, type, color, labelColor) => {
         if (pos.altitude <= 0) return;
         const az = pos.azimuth + Math.PI;
-        const azDeg = (az * 180 / Math.PI + 180) % 360;
+        const azDeg = (az * 180 / Math.PI) % 360;
         const end = getDestinationPoint(lat, lng, az, drawDistKm);
         L.polyline([[lat, lng], end], { color, weight: type === 'sun' ? 4 : 3, opacity: 1.0 }).addTo(layerGroup);
 
@@ -511,7 +533,7 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
                 <div style="margin-bottom: 2px; font-size: 0.75rem; opacity: 0.85;">${type === 'sun' ? t.sun_pos_label : t.moon_pos_label}</div>
                 <div style="font-size: 0.8rem;">${t.alt_label}: ${(pos.altitude * 180 / Math.PI).toFixed(1)}°</div>
                 <div style="font-size: 0.8rem;">${t.az_label}: ${azDeg.toFixed(1)}°</div>
-            </div>`, { direction: 'top', className: 'custom-tooltip' });
+            </div>`, { direction: 'top', className: 'custom-tooltip', permanent: state.showPermanentTooltips });
     };
 
     if (state.showSun) drawPos(sunPos, 'sun', '#ff0000', '#ffaa00');
@@ -777,6 +799,7 @@ function renderCalendar() {
 function initEventListeners() {
     elements.chkDay.addEventListener('change', (e) => { state.showSun = e.target.checked; redrawAll(); });
     elements.chkMoon.addEventListener('change', (e) => { state.showMoon = e.target.checked; redrawAll(); });
+    elements.chkPermanent.addEventListener('change', (e) => { state.showPermanentTooltips = e.target.checked; redrawAll(); });
     elements.datePicker.addEventListener('change', (e) => {
         if (e.target.value) { state.selectedDate = new Date(e.target.value); updateDateDisplay(); redrawAll(); }
     });
@@ -841,7 +864,7 @@ function initEventListeners() {
         const color = closest.type === 'sun' ? '#FFD700' : '#8A2BE2';
         L.polyline([[state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng], getDestinationPoint(state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng, closest.az, state.drawDistKm)], { color, weight: 2, dashArray: '4, 8' }).addTo(hoverLayer);
 
-        const azDeg = (closest.az * 180 / Math.PI + 180) % 360;
+        const azDeg = (closest.az * 180 / Math.PI) % 360;
         const labelPos = getDestinationPoint(state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng, closest.az, state.radiusKm * 1.05);
 
         L.marker(labelPos, {

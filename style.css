@@ -253,6 +253,23 @@ header {
 }
 .moon-joint .joint-times { color: #b0b0ff; }
 
+.toggle-permanent-row {
+    background: rgba(0, 123, 255, 0.05);
+    border-color: rgba(0, 123, 255, 0.15);
+    margin-top: 4px;
+}
+.toggle-permanent-row:hover {
+    background: rgba(0, 123, 255, 0.1);
+    border-color: rgba(0, 123, 255, 0.3);
+}
+
+.joint-label-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    opacity: 0.9;
+}
+
 .divider {
     color: var(--text-secondary);
     font-weight: 400;
@@ -310,6 +327,12 @@ header {
     transition: all 0.2s;
 }
 .lang-selector:hover { background: rgba(255, 255, 255, 0.1); }
+
+.lang-selector option {
+    background-color: #1a1a2e;
+    color: #ffffff;
+    padding: 10px;
+}
 
 /* --- Footer --- */
 .sidebar-footer {
