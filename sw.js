@@ -1,0 +1,43 @@
+const CACHE_NAME = 'celestial-map-v1.1';
+const ASSETS = [
+  'index.html',
+  'style.css',
+  'script.js',
+  'icon-192.png',
+  'icon-512.png',
+  'manifest.json'
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (let asset of ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.error('Failed to cache:', asset, err);
+        }
+      }
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+      }));
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((response) => response || fetch(e.request))
+  );
+});
