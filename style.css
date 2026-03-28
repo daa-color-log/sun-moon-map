@@ -77,10 +77,24 @@ body.sidebar-hidden .sidebar {
     align-items: flex-start;
 }
 
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    mix-blend-mode: screen; /* Removes black backgrounds from white icons */
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+}
+
 .sidebar-header-top h1 {
     font-size: 1.35rem;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     letter-spacing: -0.5px;
 }
 

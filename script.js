@@ -357,6 +357,35 @@ function getEstimatedLocalTime(utcDate, anchorLng) {
     return new Date(utcDate.getTime() + timeShiftMin * 60 * 1000);
 }
 
+function getAdjustedMoonTimes(date, lat, lng) {
+    const times = SunCalc.getMoonTimes(date, lat, lng);
+    let rise = times.rise ? times.rise.getTime() : null;
+    let set = times.set ? times.set.getTime() : null;
+
+    // If moon sets before it rises on the SAME day, 
+    // it belongs to the previous night's moon.
+    // For "today's moon", we want the rise today and its corresponding set (usually tomorrow).
+    if (rise && set && rise > set) {
+        const tomorrow = SunCalc.getMoonTimes(new Date(date.getTime() + 86400000), lat, lng);
+        set = tomorrow.set ? tomorrow.set.getTime() : rise + 12 * 3600000;
+    } else if (rise && !set) {
+        const tomorrow = SunCalc.getMoonTimes(new Date(date.getTime() + 86400000), lat, lng);
+        set = tomorrow.set ? tomorrow.set.getTime() : rise + 12 * 3600000;
+    } else if (!rise && set) {
+        const yesterday = SunCalc.getMoonTimes(new Date(date.getTime() - 86400000), lat, lng);
+        if (yesterday.rise && yesterday.rise.getTime() < set) {
+            rise = yesterday.rise.getTime();
+        } else {
+            rise = set - 12 * 3600000;
+        }
+    }
+
+    return {
+        rise: rise ? new Date(rise) : null,
+        set: set ? new Date(set) : null
+    };
+}
+
 function formatTime(dateObject) {
     if (!dateObject || isNaN(dateObject.getTime())) return i18n[state.currentLang].today_none;
     const lng = state.mainAnchorLatLng ? state.mainAnchorLatLng.lng : 0;
@@ -508,20 +537,13 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
     }
 }
 
-function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, drawDistKm) {
-    if (!state.showMoon || (!moonTimes.rise && !moonTimes.set)) return;
+function drawMoonTrack(lat, lng, adjMoonTimes, sunTimes, layerGroup, radiusKm, drawDistKm) {
+    if (!state.showMoon || (!adjMoonTimes.rise && !adjMoonTimes.set)) return;
 
-    let mT1_raw = moonTimes.rise ? moonTimes.rise.getTime() : null;
-    let mT2_raw = moonTimes.set ? moonTimes.set.getTime() : null;
+    let mT1 = adjMoonTimes.rise ? adjMoonTimes.rise.getTime() : null;
+    let mT2 = adjMoonTimes.set ? adjMoonTimes.set.getTime() : null;
 
-    // Fallback if one is missing
-    let mT1 = mT1_raw || (mT2_raw - 43200000);
-    let mT2 = mT2_raw || (mT1_raw + 43200000);
-
-    if (mT1 > mT2) {
-        const tomorrow = SunCalc.getMoonTimes(new Date(mT1 + 86400000), lat, lng);
-        mT2 = tomorrow.set ? tomorrow.set.getTime() : mT1 + 43200000;
-    }
+    if (!mT1 || !mT2) return;
 
     const sunAzStart = sunTimes.sunrise ? SunCalc.getPosition(sunTimes.sunrise, lat, lng).azimuth + Math.PI : null;
     const sunAzEnd = sunTimes.sunset ? SunCalc.getPosition(sunTimes.sunset, lat, lng).azimuth + Math.PI : null;
@@ -537,7 +559,14 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
         return s < e ? (az >= s && az <= e) : (az >= s || az <= e);
     };
 
+    // Include the exact start and end points in the trajectory to match lines
+    const moonTimesToDraw = [];
     for (let timeT = mT1; timeT <= mT2; timeT += stepM) {
+        moonTimesToDraw.push(timeT);
+    }
+    if (moonTimesToDraw[moonTimesToDraw.length - 1] !== mT2) moonTimesToDraw.push(mT2);
+
+    for (const timeT of moonTimesToDraw) {
         const az = SunCalc.getMoonPosition(new Date(timeT), lat, lng).azimuth + Math.PI;
         if (!isOverlappingSun(az)) {
             if (currentMoonArc.length === 0) currentMoonArc.push([lat, lng]);
@@ -553,7 +582,7 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
         L.polygon(currentMoonArc, { color: 'none', fillColor: '#8A2BE2', fillOpacity: 0.15, interactive: false }).addTo(layerGroup);
     }
 
-    // Hourly labels aligned with estimated local whole hours
+    // Hourly labels
     const viewerOffsetMin = -new Date().getTimezoneOffset();
     const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
     const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
@@ -566,7 +595,6 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
         const actualMDate = new Date(curMLocalTime - timeShiftMs);
         const az = SunCalc.getMoonPosition(actualMDate, lat, lng).azimuth + Math.PI;
         if (!isOverlappingSun(az)) {
-            // Move moon hourly markers and labels to the center of the purple fan
             const mSteps = 20;
             const mPoints = [[lat, lng]];
             for (let k = 1; k <= mSteps; k++) {
@@ -575,7 +603,6 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
             L.polyline(mPoints, { color: '#ddaaff', weight: 1.0, opacity: 0.6, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
 
             const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.5);
-
             L.marker(labelPos, {
                 icon: L.divIcon({
                     className: 'transparent-icon',
@@ -636,25 +663,19 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
     if (state.showMoon) drawPos(moonPos, 'moon', '#0000ff', '#ddaaff');
 }
 
-function updateHoverData(lat, lng, sunTimes, moonTimes) {
+function updateHoverData(lat, lng, sunTimes, adjMoonTimes) {
     state.hoverTimeData = [];
     if (state.showSun && sunTimes.sunrise && sunTimes.sunset) {
         for (let t = sunTimes.sunrise.getTime(); t <= sunTimes.sunset.getTime(); t += 60000) {
             state.hoverTimeData.push({ t, az: SunCalc.getPosition(new Date(t), lat, lng).azimuth + Math.PI, type: 'sun', baseT: sunTimes.sunrise.getTime() });
         }
     }
-    if (state.showMoon && (moonTimes.rise || moonTimes.set)) {
-        let mT1_raw = moonTimes.rise ? moonTimes.rise.getTime() : null;
-        let mT2_raw = moonTimes.set ? moonTimes.set.getTime() : null;
-        let mT1 = mT1_raw || (mT2_raw - 43200000);
-        let mT2 = mT2_raw || (mT1_raw + 43200000);
-
-        if (mT1 > mT2) {
-            const tmr = SunCalc.getMoonTimes(new Date(mT1 + 86400000), lat, lng);
-            mT2 = tmr.set ? tmr.set.getTime() : mT1 + 43200000;
-        }
+    if (state.showMoon && adjMoonTimes.rise && adjMoonTimes.set) {
+        const mT1 = adjMoonTimes.rise.getTime();
+        const mT2 = adjMoonTimes.set.getTime();
         const sS = sunTimes.sunrise ? SunCalc.getPosition(sunTimes.sunrise, lat, lng).azimuth + Math.PI : null;
         const sE = sunTimes.sunset ? SunCalc.getPosition(sunTimes.sunset, lat, lng).azimuth + Math.PI : null;
+
         for (let t = mT1; t <= mT2; t += 60000) {
             const az = SunCalc.getMoonPosition(new Date(t), lat, lng).azimuth + Math.PI;
             if (!state.showSun || sS === null || sE === null || !(sS < sE ? (az >= sS && az <= sE) : (az >= sS || az <= sE))) {
@@ -666,37 +687,39 @@ function updateHoverData(lat, lng, sunTimes, moonTimes) {
 
 function computeAndDraw(lat, lng, layerGroup, isMain = true) {
     const sunTimes = SunCalc.getTimes(state.selectedDate, lat, lng);
-    const moonTimes = SunCalc.getMoonTimes(state.selectedDate, lat, lng);
+    const adjMoonTimes = getAdjustedMoonTimes(state.selectedDate, lat, lng);
     const t = i18n[state.currentLang];
 
     const bounds = map.getBounds();
     const diag = map.distance(bounds.getNorthEast(), bounds.getSouthWest());
 
-    // Cap distances to avoid wrap-around distortions and clumping at world-scale zoom
-    // drawDistKm should be long enough to reach edges, but not exceed Earth circumference (40,000km)
     state.drawDistKm = Math.min(18000, (diag * 1.2) / 1000);
-
-    // Label radius (fan size) should stay visually within the map's viewport but not disappear
     state.radiusKm = Math.min(4000, (diag * 0.22) / 1000);
-
-    // Ensure radius doesn't become too small for labels to be readable when zoomed in
     if (state.radiusKm < 0.1) state.radiusKm = 0.1;
 
     if (isMain) {
-        updateAstronomyTimesUI(sunTimes, moonTimes);
+        updateAstronomyTimesUI(sunTimes, adjMoonTimes);
         handleAutoTheme(lat, lng);
         drawSunTrack(lat, lng, sunTimes, layerGroup, state.radiusKm, state.drawDistKm);
-        drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, state.radiusKm, state.drawDistKm);
-        updateHoverData(lat, lng, sunTimes, moonTimes);
+        drawMoonTrack(lat, lng, adjMoonTimes, sunTimes, layerGroup, state.radiusKm, state.drawDistKm);
+        updateHoverData(lat, lng, sunTimes, adjMoonTimes);
     }
 
     // Rise/Set Lines
     if (state.showSun && sunTimes.sunrise) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunrise, lat, lng).azimuth + Math.PI, '#ffaa00', t.sun_line_lbl, layerGroup, state.drawDistKm);
     if (state.showSun && sunTimes.sunset) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunset, lat, lng).azimuth + Math.PI, '#ff5500', t.sunset_line_lbl, layerGroup, state.drawDistKm);
-    if (state.showMoon && moonTimes.rise) drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(moonTimes.rise, lat, lng).azimuth + Math.PI, '#a0a0ff', t.moon_line_lbl, layerGroup, state.drawDistKm);
-    if (state.showMoon && moonTimes.set) drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(moonTimes.set, lat, lng).azimuth + Math.PI, '#505080', t.moonset_line_lbl, layerGroup, state.drawDistKm);
+    
+    if (state.showMoon && adjMoonTimes.rise) {
+        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.rise, lat, lng).azimuth + Math.PI, '#a0a0ff', t.moon_line_lbl, layerGroup, state.drawDistKm);
+    }
+    if (state.showMoon && adjMoonTimes.set) {
+        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.set, lat, lng).azimuth + Math.PI, '#505080', t.moonset_line_lbl, layerGroup, state.drawDistKm);
+    }
 
-    drawRealTimePositions(lat, lng, layerGroup, state.drawDistKm);
+    const isToday = state.selectedDate.toDateString() === new Date().toDateString();
+    if (isToday) {
+        drawRealTimePositions(lat, lng, layerGroup, state.drawDistKm);
+    }
 }
 
 function redrawAll() {
@@ -958,6 +981,11 @@ function initEventListeners() {
     });
     elements.locateBtn.addEventListener('click', () => doLocate(true));
     elements.dateSelectionTrigger.onclick = () => { elements.calendarModal.style.display = 'flex'; renderCalendar(); };
+    elements.calendarModal.onclick = (e) => {
+        if (e.target === elements.calendarModal) {
+            elements.calendarModal.style.display = 'none';
+        }
+    };
     elements.closeCalendar.onclick = () => { elements.calendarModal.style.display = 'none'; };
     elements.prevMonth.onclick = (e) => { e.stopPropagation(); state.viewDate.setMonth(state.viewDate.getMonth() - 1); renderCalendar(); };
     elements.nextMonth.onclick = (e) => { e.stopPropagation(); state.viewDate.setMonth(state.viewDate.getMonth() + 1); renderCalendar(); };
