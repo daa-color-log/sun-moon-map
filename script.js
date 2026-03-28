@@ -346,10 +346,21 @@ function getDestinationPoint(lat, lng, azimuthRadians, distanceKm) {
 function getEstimatedLocalTime(utcDate, anchorLng) {
     if (!utcDate || isNaN(utcDate.getTime())) return null;
 
-    // Use the absolute UTC time and let the browser's locale formatting handle the timezone.
-    // This ensures consistency with the marker's appearance/disappearance for users in the same timezone.
-    // (Solar-time adjustment (4 min/deg) is removed to avoid discrepancies with local wall clocks)
-    return new Date(utcDate.getTime());
+    // Viewer's current local timezone offset in minutes (e.g. +540 for Korea/Japan)
+    const viewerOffsetMin = -new Date().getTimezoneOffset();
+    // Browser's "Natural" longitude for its whole-hour timezone (15 deg = 1 hour)
+    const browserBaseLng = (viewerOffsetMin / 60) * 15;
+
+    // Estimate the hour difference by rounding the longitude difference to the nearest 15 degrees (1 hour).
+    // We use a 12-degree threshold to avoid shifting regions that likely share the same timezone (e.g., Korea and Japan).
+    const lngDiff = anchorLng - browserBaseLng;
+    let hourShift = 0;
+    if (Math.abs(lngDiff) > 12) {
+        hourShift = Math.round(lngDiff / 15);
+    }
+
+    const timeShiftMin = hourShift * 60;
+    return new Date(utcDate.getTime() + timeShiftMin * 60 * 1000);
 }
 
 function getAdjustedMoonTimes(date, lat, lng) {
