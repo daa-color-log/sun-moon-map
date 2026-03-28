@@ -456,21 +456,17 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
         const actualDate = new Date(curLocalTime - timeShiftMs);
         const az = SunCalc.getPosition(actualDate, lat, lng).azimuth + Math.PI;
         
-        // Use subdivided Geodesic lines for hourly markers too
+        // Move hourly markers and labels to the center of the yellow fan
         const trackSteps = 20;
         const trackPoints = [[lat, lng]];
+        // Only draw dashed lines within the fan radius
         for (let j = 1; j <= trackSteps; j++) {
-            trackPoints.push(getDestinationPoint(lat, lng, az, (drawDistKm / trackSteps) * j));
+            trackPoints.push(getDestinationPoint(lat, lng, az, (radiusKm / trackSteps) * j));
         }
-        L.polyline(trackPoints, { color: '#ffffff', weight: 1.5, opacity: 0.4, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
+        L.polyline(trackPoints, { color: '#ffffff', weight: 1.5, opacity: 0.6, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
         
-        // Consistent Pixel-based positioning for hourly labels
-        const sPx = map.latLngToContainerPoint([lat, lng]);
-        const rH = 110; // Slightly closer than Rise/Set labels
-        const labelPos = map.containerPointToLatLng(L.point(
-            sPx.x + Math.sin(az) * rH,
-            sPx.y - Math.cos(az) * rH
-        ));
+        // Position labels exactly at the midpoint of the fan radius
+        const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.5);
 
         L.marker(labelPos, {
             icon: L.divIcon({
@@ -541,20 +537,15 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
         const actualMDate = new Date(curMLocalTime - timeShiftMs);
         const az = SunCalc.getMoonPosition(actualMDate, lat, lng).azimuth + Math.PI;
         if (!isOverlappingSun(az)) {
-            // Geodesic subdivision for moon hourly markers
+            // Move moon hourly markers and labels to the center of the purple fan
             const mSteps = 20;
             const mPoints = [[lat, lng]];
             for (let k = 1; k <= mSteps; k++) {
-                mPoints.push(getDestinationPoint(lat, lng, az, (drawDistKm / mSteps) * k));
+                mPoints.push(getDestinationPoint(lat, lng, az, (radiusKm / mSteps) * k));
             }
-            L.polyline(mPoints, { color: '#ddaaff', weight: 1.0, opacity: 0.4, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
+            L.polyline(mPoints, { color: '#ddaaff', weight: 1.0, opacity: 0.6, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
 
-            const sPx = map.latLngToContainerPoint([lat, lng]);
-            const rH = 90;
-            const labelPos = map.containerPointToLatLng(L.point(
-                sPx.x + Math.sin(az) * rH,
-                sPx.y - Math.cos(az) * rH
-            ));
+            const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.5);
 
             L.marker(labelPos, {
                 icon: L.divIcon({
@@ -849,6 +840,7 @@ function renderCalendar() {
     const year = state.viewDate.getFullYear();
     const month = state.viewDate.getMonth();
     elements.calendarTitle.innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
+    const t = i18n[state.currentLang];
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
