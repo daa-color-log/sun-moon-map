@@ -459,8 +459,12 @@ function updateAstronomyTimesUI(sunTimes, moonTimes) {
 
 function handleAutoTheme(lat, lng) {
     if (state.isManualTheme) return;
-    const now = new Date();
-    const times = SunCalc.getTimes(now, lat, lng);
+    
+    // Geographical daytime depends on absolute time, not local labels.
+    // We normalize longitude to [-180, 180] for SunCalc.
+    const normLng = ((lng + 180) % 360 + 360) % 360 - 180;
+    const now = new Date(); 
+    const times = SunCalc.getTimes(now, lat, normLng);
     const isDaytime = !!(times.sunrise && times.sunset && (now >= times.sunrise && now <= times.sunset));
 
     // Sync track visibility with auto-theme (unless manually overridden within last 5 minutes)
@@ -685,8 +689,9 @@ function updateHoverData(lat, lng, sunTimes, adjMoonTimes) {
 }
 
 function computeAndDraw(lat, lng, layerGroup, isMain = true) {
-    const sunTimes = SunCalc.getTimes(state.selectedDate, lat, lng);
-    const adjMoonTimes = getAdjustedMoonTimes(state.selectedDate, lat, lng);
+    const normLng = ((lng + 180) % 360 + 360) % 360 - 180;
+    const sunTimes = SunCalc.getTimes(state.selectedDate, lat, normLng);
+    const adjMoonTimes = getAdjustedMoonTimes(state.selectedDate, lat, normLng);
     const t = i18n[state.currentLang];
 
     const bounds = map.getBounds();
@@ -705,17 +710,18 @@ function computeAndDraw(lat, lng, layerGroup, isMain = true) {
     }
 
     // Rise/Set Lines
-    if (state.showSun && sunTimes.sunrise) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunrise, lat, lng).azimuth + Math.PI, '#ffaa00', t.sun_line_lbl, layerGroup, state.drawDistKm);
-    if (state.showSun && sunTimes.sunset) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunset, lat, lng).azimuth + Math.PI, '#ff5500', t.sunset_line_lbl, layerGroup, state.drawDistKm);
+    if (state.showSun && sunTimes.sunrise) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunrise, lat, normLng).azimuth + Math.PI, '#ffaa00', t.sun_line_lbl, layerGroup, state.drawDistKm);
+    if (state.showSun && sunTimes.sunset) drawLineWithLabel([lat, lng], SunCalc.getPosition(sunTimes.sunset, lat, normLng).azimuth + Math.PI, '#ff5500', t.sunset_line_lbl, layerGroup, state.drawDistKm);
     
     if (state.showMoon && adjMoonTimes.rise) {
-        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.rise, lat, lng).azimuth + Math.PI, '#a0a0ff', t.moon_line_lbl, layerGroup, state.drawDistKm);
+        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.rise, lat, normLng).azimuth + Math.PI, '#a0a0ff', t.moon_line_lbl, layerGroup, state.drawDistKm);
     }
     if (state.showMoon && adjMoonTimes.set) {
-        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.set, lat, lng).azimuth + Math.PI, '#505080', t.moonset_line_lbl, layerGroup, state.drawDistKm);
+        drawLineWithLabel([lat, lng], SunCalc.getMoonPosition(adjMoonTimes.set, lat, normLng).azimuth + Math.PI, '#505080', t.moonset_line_lbl, layerGroup, state.drawDistKm);
     }
 
-    const isToday = state.selectedDate.toDateString() === new Date().toDateString();
+    const localNow = getEstimatedLocalTime(new Date(), lng);
+    const isToday = state.selectedDate.toDateString() === localNow.toDateString();
     if (isToday) {
         drawRealTimePositions(lat, lng, layerGroup, state.drawDistKm);
     }
