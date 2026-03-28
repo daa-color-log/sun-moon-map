@@ -581,18 +581,25 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
 
         const dist = type === 'sun' ? 120 : 100;
         const labelPos = map.containerPointToLatLng(L.point(startPx.x + Math.sin(az) * dist, startPx.y - Math.cos(az) * dist));
+        let moonAddon = '';
+        if (type === 'moon') {
+            const moonIllum = SunCalc.getMoonIllumination(now);
+            moonAddon = `<div style="width: 28px; height: 28px; margin: 0 auto 6px; filter: drop-shadow(0 0 4px ${color});">${drawMoonSVG(moonIllum.phase)}</div>`;
+        }
+
         L.marker(labelPos, {
             icon: L.divIcon({
                 className: 'transparent-icon',
-                html: `<div style="width: ${type === 'sun' ? 24 : 20}px; height: ${type === 'sun' ? 24 : 20}px; background-color: ${color}; border-radius: 50%; border: ${type === 'sun' ? 3 : 2}px solid white; box-shadow: 0 0 10px rgba(0,255,0,0.8); display: flex; align-items: center; justify-content: center;"></div>`,
+                html: `<div style="width: ${type === 'sun' ? 24 : 20}px; height: ${type === 'sun' ? 24 : 20}px; background-color: ${color}; border-radius: 50%; border: ${type === 'sun' ? 3 : 2}px solid white; box-shadow: 0 0 10px ${color};"></div>`,
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             })
         }).addTo(layerGroup).bindTooltip(`
-            <div style="background: rgba(0,0,0,0.6); color: ${labelColor}; padding: 6px 10px; border-radius: 8px; border: 1.2px solid ${labelColor}; font-weight: 700; text-align: center; line-height: 1.3;">
+            <div style="background: rgba(0,0,0,0.7); color: ${labelColor}; padding: 8px 12px; border-radius: 12px; border: 1.5px solid ${labelColor}; font-weight: 700; text-align: center; line-height: 1.4; backdrop-filter: blur(4px);">
+                ${moonAddon}
                 <div style="margin-bottom: 2px; font-size: 0.75rem; opacity: 0.85;">${type === 'sun' ? t.sun_pos_label : t.moon_pos_label}</div>
-                <div style="font-size: 0.8rem;">${t.alt_label}: ${(pos.altitude * 180 / Math.PI).toFixed(1)}°</div>
-                <div style="font-size: 0.8rem;">${t.az_label}: ${azDeg.toFixed(1)}°</div>
+                <div style="font-size: 0.85rem;">${t.alt_label}: ${(pos.altitude * 180 / Math.PI).toFixed(1)}°</div>
+                <div style="font-size: 0.85rem;">${t.az_label}: ${azDeg.toFixed(1)}°</div>
             </div>`, { direction: 'top', className: 'custom-tooltip', permanent: state.showPermanentTooltips });
     };
 
