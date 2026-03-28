@@ -116,10 +116,42 @@ header {
 }
 
 .help-text {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    line-height: 1.5;
-    opacity: 0.8;
+    line-height: 1.6;
+}
+
+.help-title {
+    display: block;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 10px;
+}
+
+.help-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.help-item b {
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.help-footer {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-glass);
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--accent-sun);
 }
 
 /* --- Date Selector --- */

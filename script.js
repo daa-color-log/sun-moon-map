@@ -50,7 +50,7 @@ const i18n = {
     ko: {
         title: "해와 달 지도",
         loc_fetching: "위치 정보를 가져오는 중...",
-        help_text: "🗺️ <b>지도 조작 가이드</b><br>📍 <b>좌클릭</b>: 원하는 지점을 클릭하면 그곳이 분석의 <b>기준점</b>(내 위치)이 됩니다.<br>🎯 <b>우클릭 / 롱터치</b>: 기준점 설정 후 다른 곳을 조작하면 <b>목표 지점</b>까지의 직선과 방위각 핀이 생성됩니다.<br>✨ 기준점을 먼저 세워야 목표 핀을 꽂을 수 있습니다!",
+        help_text: "<span class='help-title'>🗺️ 지도 조작 가이드</span><div class='help-item'>📍 <b>좌클릭</b>: 분석 기준점(내 위치) 설정</div><div class='help-item'>🎯 <b>우클릭 / 롱터치</b>: 목표 지점 직선 및 방위각 핀 추가</div><div class='help-footer'>먼저 지도를 클릭해 보세요! ✨</div>",
         date_select: "날짜 선택",
         map_display_settings: "지도 궤적 표시 설정",
         sun_track: "☀️ 태양 궤적 (일출/일몰)",
@@ -100,7 +100,7 @@ const i18n = {
     en: {
         title: "Sun & Moon Map",
         loc_fetching: "Fetching location...",
-        help_text: "🗺️ <b>Map Guide</b><br>📍 <b>Left-click</b> to set your <b>anchor point</b> (base location).<br>🎯 <b>Right-click / Long-press</b> to drop target pins and see <b>bearing lines</b> from your anchor.<br>✨ Set an anchor point first before adding targets!",
+        help_text: "<span class='help-title'>🗺️ Map Guide</span><div class='help-item'>📍 <b>Left-click</b>: Set your anchor point (base location)</div><div class='help-item'>🎯 <b>Right-click</b>: Add target pins and bearing lines</div>✨ <b>Set anchor point first!</b>",
         date_select: "Select Date",
         map_display_settings: "Map Settings",
         sun_track: "☀️ Sun Track (Rise/Set)",
