@@ -346,15 +346,10 @@ function getDestinationPoint(lat, lng, azimuthRadians, distanceKm) {
 function getEstimatedLocalTime(utcDate, anchorLng) {
     if (!utcDate || isNaN(utcDate.getTime())) return null;
 
-    // Viewer's current local timezone offset in minutes (e.g. +540 for Korea)
-    const viewerOffsetMin = -new Date().getTimezoneOffset();
-    // Browser's "Natural" longitude for its whole-hour timezone (15 deg = 1 hour)
-    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
-
-    // Calculate the 'Time Shift' relative to the browser's local time base
-    // This estimates the local clock time of the anchor location.
-    const timeShiftMin = (anchorLng - browserBaseLng) * 4;
-    return new Date(utcDate.getTime() + timeShiftMin * 60 * 1000);
+    // Use the absolute UTC time and let the browser's locale formatting handle the timezone.
+    // This ensures consistency with the marker's appearance/disappearance for users in the same timezone.
+    // (Solar-time adjustment (4 min/deg) is removed to avoid discrepancies with local wall clocks)
+    return new Date(utcDate.getTime());
 }
 
 function getAdjustedMoonTimes(date, lat, lng) {
@@ -501,17 +496,12 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
     arcPoints.push(getDestinationPoint(lat, lng, sunsetPos.azimuth + Math.PI, radiusKm));
     L.polygon(arcPoints, { color: 'none', fillColor: '#FFD700', fillOpacity: 0.15, interactive: false }).addTo(layerGroup);
 
-    // Hourly labels aligned with estimated local whole hours
-    const viewerOffsetMin = -new Date().getTimezoneOffset();
-    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
-    const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
-
-    const sunriseLocal = new Date(t1 + timeShiftMs);
-    const startHourLocal = new Date(sunriseLocal);
+    // Hourly labels aligned with viewer's local hours (Standard Time)
+    const startHourLocal = new Date(t1);
     startHourLocal.setMinutes(0, 0, 0);
 
-    for (let curLocalTime = startHourLocal.getTime() + 3600000; (curLocalTime - timeShiftMs) < t2; curLocalTime += 3600000) {
-        const actualDate = new Date(curLocalTime - timeShiftMs);
+    for (let curLocalTime = startHourLocal.getTime() + 3600000; curLocalTime < t2; curLocalTime += 3600000) {
+        const actualDate = new Date(curLocalTime);
         const az = SunCalc.getPosition(actualDate, lat, lng).azimuth + Math.PI;
 
         // Move hourly markers and labels to the center of the yellow fan
@@ -583,16 +573,11 @@ function drawMoonTrack(lat, lng, adjMoonTimes, sunTimes, layerGroup, radiusKm, d
     }
 
     // Hourly labels
-    const viewerOffsetMin = -new Date().getTimezoneOffset();
-    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
-    const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
-
-    const mRiseLocal = new Date(mT1 + timeShiftMs);
-    const startMLocal = new Date(mRiseLocal);
+    const startMLocal = new Date(mT1);
     startMLocal.setMinutes(0, 0, 0);
 
-    for (let curMLocalTime = startMLocal.getTime() + 3600000; (curMLocalTime - timeShiftMs) < mT2; curMLocalTime += 3600000) {
-        const actualMDate = new Date(curMLocalTime - timeShiftMs);
+    for (let curMLocalTime = startMLocal.getTime() + 3600000; curMLocalTime < mT2; curMLocalTime += 3600000) {
+        const actualMDate = new Date(curMLocalTime);
         const az = SunCalc.getMoonPosition(actualMDate, lat, lng).azimuth + Math.PI;
         if (!isOverlappingSun(az)) {
             const mSteps = 20;
@@ -623,7 +608,10 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
     const startPx = map.latLngToContainerPoint([lat, lng]);
 
     const drawPos = (pos, type, color, labelColor) => {
-        if (pos.altitude <= 0) return;
+        // Sun/Moon markers should disappear at the astronomical horizon (-0.833 deg)
+        // rather than the geometric horizon (0 deg), to match sunrise/sunset calculations.
+        const horizonThreshold = -0.833 * Math.PI / 180;
+        if (pos.altitude <= horizonThreshold) return;
         const az = pos.azimuth + Math.PI;
         const azDeg = (az * 180 / Math.PI) % 360;
 
