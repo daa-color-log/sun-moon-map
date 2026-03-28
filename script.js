@@ -330,53 +330,70 @@ function getDestinationPoint(lat, lng, azimuthRadians, distanceKm) {
     return [lat2 * 180 / Math.PI, lng2 * 180 / Math.PI];
 }
 
+function getEstimatedLocalTime(utcDate, anchorLng) {
+    if (!utcDate || isNaN(utcDate.getTime())) return null;
+    
+    // Viewer's current local timezone offset in minutes (e.g. +540 for Korea)
+    const viewerOffsetMin = -new Date().getTimezoneOffset();
+    // Browser's "Natural" longitude for its whole-hour timezone (15 deg = 1 hour)
+    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
+    
+    // Calculate the 'Time Shift' relative to the browser's local time base
+    // This estimates the local clock time of the anchor location.
+    const timeShiftMin = (anchorLng - browserBaseLng) * 4;
+    return new Date(utcDate.getTime() + timeShiftMin * 60 * 1000);
+}
+
 function formatTime(dateObject) {
     if (!dateObject || isNaN(dateObject.getTime())) return i18n[state.currentLang].today_none;
-    return dateObject.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const lng = state.mainAnchorLatLng ? state.mainAnchorLatLng.lng : 0;
+    const local = getEstimatedLocalTime(dateObject, lng);
+    
+    // Return the formatted HH:mm of the estimated local time
+    return local.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function getDisplayTimeStr(timestamp, baseTimestamp, showMinutes = false) {
-    const d = new Date(timestamp);
-    const base = new Date(baseTimestamp);
+    const lng = state.mainAnchorLatLng ? state.mainAnchorLatLng.lng : 0;
+    const local = getEstimatedLocalTime(new Date(timestamp), lng);
+    const baseLocal = getEstimatedLocalTime(new Date(baseTimestamp), lng);
     
-    // Estimate local timezone offset based on longitude (15 deg = 1 hour)
-    let utcOffset = 0;
-    if (state.mainAnchorLatLng) {
-        utcOffset = Math.round(state.mainAnchorLatLng.lng / 15);
-    } else {
-        // Fallback to browser timezone if no anchor
-        utcOffset = -d.getTimezoneOffset() / 60;
-    }
+    if (!local) return '';
 
-    const totalHours = (d.getUTCHours() + utcOffset + 24) % 24;
-    const baseTotalHours = (base.getUTCHours() + utcOffset + 24) % 24;
-
-    const dZero = new Date(d); dZero.setUTCHours(0,0,0,0);
-    const bZero = new Date(base); bZero.setUTCHours(0,0,0,0);
+    // Calculate day diff in estimated local time
+    const dZero = new Date(local); dZero.setHours(0, 0, 0, 0);
+    const bZero = new Date(baseLocal); bZero.setHours(0, 0, 0, 0);
     const dayDiff = Math.round((dZero - bZero) / 86400000);
     
-    const displayHour = totalHours + (dayDiff * 24);
-    const mm = String(d.getUTCMinutes()).padStart(2, '0');
+    const displayHour = local.getHours() + (dayDiff * 24);
+    const mm = String(local.getMinutes()).padStart(2, '0');
 
     if (showMinutes) return displayHour + ':' + mm;
-    return displayHour + i18n[state.currentLang].hour_suffix;
+    const t = i18n[state.currentLang];
+    return displayHour + (t.hour_suffix || '');
 }
 
 function drawLineWithLabel(start, azimuth, color, labelText, layerGroup, drawDistKm) {
-    const end = getDestinationPoint(start[0], start[1], azimuth, drawDistKm);
-    L.polyline([start, end], { color, weight: 3, opacity: 0.85, dashArray: '8, 12' }).addTo(layerGroup);
+    const steps = 40;
+    const points = [start];
+    for (let i = 1; i <= steps; i++) {
+        points.push(getDestinationPoint(start[0], start[1], azimuth, (drawDistKm / steps) * i));
+    }
+    L.polyline(points, { color, weight: 3, opacity: 0.85, dashArray: '8, 12' }).addTo(layerGroup);
 
+    // Standardized Pixel-based positioning for labels to prevent 'gathering' or 'disappearing'
     const startPx = map.latLngToContainerPoint(start);
-    const rPx = 130;
-    const dx = Math.sin(azimuth) * rPx;
-    const dy = -Math.cos(azimuth) * rPx;
-    const labelPos = map.containerPointToLatLng(L.point(startPx.x + dx, startPx.y + dy));
+    const rPx = 160; 
+    const labelPos = map.containerPointToLatLng(L.point(
+        startPx.x + Math.sin(azimuth) * rPx,
+        startPx.y - Math.cos(azimuth) * rPx
+    ));
 
     L.marker(labelPos, {
         icon: L.divIcon({
             className: 'transparent-icon',
-            html: `<div class="custom-line-label" style="color: ${color}; border-color: ${color};">${labelText}</div>`,
-            iconSize: null
+            html: `<div class="custom-line-label" style="color: ${color}; border-color: ${color}; transform: translate(-50%, -50%);">${labelText}</div>`,
+            iconSize: [0, 0]
         }),
         interactive: false
     }).addTo(layerGroup);
@@ -426,18 +443,39 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
     arcPoints.push(getDestinationPoint(lat, lng, sunsetPos.azimuth + Math.PI, radiusKm));
     L.polygon(arcPoints, { color: 'none', fillColor: '#FFD700', fillOpacity: 0.15, interactive: false }).addTo(layerGroup);
 
-    // Hourly labels
-    const startHourObj = new Date(t1);
-    startHourObj.setMinutes(0, 0, 0);
-    for (let currentHourTime = startHourObj.getTime() + 3600000; currentHourTime < t2; currentHourTime += 3600000) {
-        const az = SunCalc.getPosition(new Date(currentHourTime), lat, lng).azimuth + Math.PI;
-        L.polyline([[lat, lng], getDestinationPoint(lat, lng, az, drawDistKm)], { color: '#ffffff', weight: 1.5, opacity: 0.6, dashArray: '3, 6', interactive: false }).addTo(layerGroup);
+    // Hourly labels aligned with estimated local whole hours
+    const viewerOffsetMin = -new Date().getTimezoneOffset();
+    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
+    const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
+    
+    const sunriseLocal = new Date(t1 + timeShiftMs);
+    const startHourLocal = new Date(sunriseLocal);
+    startHourLocal.setMinutes(0, 0, 0);
+    
+    for (let curLocalTime = startHourLocal.getTime() + 3600000; (curLocalTime - timeShiftMs) < t2; curLocalTime += 3600000) {
+        const actualDate = new Date(curLocalTime - timeShiftMs);
+        const az = SunCalc.getPosition(actualDate, lat, lng).azimuth + Math.PI;
         
-        const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.65);
+        // Use subdivided Geodesic lines for hourly markers too
+        const trackSteps = 20;
+        const trackPoints = [[lat, lng]];
+        for (let j = 1; j <= trackSteps; j++) {
+            trackPoints.push(getDestinationPoint(lat, lng, az, (drawDistKm / trackSteps) * j));
+        }
+        L.polyline(trackPoints, { color: '#ffffff', weight: 1.5, opacity: 0.4, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
+        
+        // Consistent Pixel-based positioning for hourly labels
+        const sPx = map.latLngToContainerPoint([lat, lng]);
+        const rH = 110; // Slightly closer than Rise/Set labels
+        const labelPos = map.containerPointToLatLng(L.point(
+            sPx.x + Math.sin(az) * rH,
+            sPx.y - Math.cos(az) * rH
+        ));
+
         L.marker(labelPos, {
             icon: L.divIcon({
                 className: 'transparent-icon',
-                html: `<div style="color: white; font-weight: 700; font-size: 0.85rem; text-shadow: 0px 1px 4px rgba(0,0,0,0.9), 0px 0px 2px rgba(0,0,0,0.8); transform: translate(-50%, -50%); white-space: nowrap;">${getDisplayTimeStr(currentHourTime, t1)}</div>`,
+                html: `<div style="color: white; font-weight: 700; font-size: 0.85rem; text-shadow: 0px 1px 4px rgba(0,0,0,0.9); transform: translate(-50%, -50%); white-space: nowrap;">${getDisplayTimeStr(actualDate.getTime(), t1)}</div>`,
                 iconSize: [0, 0]
             }),
             interactive: false
@@ -450,7 +488,7 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
 
     let mT1_raw = moonTimes.rise ? moonTimes.rise.getTime() : null;
     let mT2_raw = moonTimes.set ? moonTimes.set.getTime() : null;
-    
+
     // Fallback if one is missing
     let mT1 = mT1_raw || (mT2_raw - 43200000);
     let mT2 = mT2_raw || (mT1_raw + 43200000);
@@ -490,18 +528,38 @@ function drawMoonTrack(lat, lng, moonTimes, sunTimes, layerGroup, radiusKm, draw
         L.polygon(currentMoonArc, { color: 'none', fillColor: '#8A2BE2', fillOpacity: 0.15, interactive: false }).addTo(layerGroup);
     }
 
-    // Hourly labels
-    const startMHourObj = new Date(mT1);
-    startMHourObj.setMinutes(0, 0, 0);
-    for (let currentMHourTime = startMHourObj.getTime() + 3600000; currentMHourTime < mT2; currentMHourTime += 3600000) {
-        const az = SunCalc.getMoonPosition(new Date(currentMHourTime), lat, lng).azimuth + Math.PI;
+    // Hourly labels aligned with estimated local whole hours
+    const viewerOffsetMin = -new Date().getTimezoneOffset();
+    const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
+    const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
+
+    const mRiseLocal = new Date(mT1 + timeShiftMs);
+    const startMLocal = new Date(mRiseLocal);
+    startMLocal.setMinutes(0, 0, 0);
+
+    for (let curMLocalTime = startMLocal.getTime() + 3600000; (curMLocalTime - timeShiftMs) < mT2; curMLocalTime += 3600000) {
+        const actualMDate = new Date(curMLocalTime - timeShiftMs);
+        const az = SunCalc.getMoonPosition(actualMDate, lat, lng).azimuth + Math.PI;
         if (!isOverlappingSun(az)) {
-            L.polyline([[lat, lng], getDestinationPoint(lat, lng, az, drawDistKm)], { color: '#ddaaff', weight: 1.0, opacity: 0.5, dashArray: '2, 6', interactive: false }).addTo(layerGroup);
-            const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.65);
+            // Geodesic subdivision for moon hourly markers
+            const mSteps = 20;
+            const mPoints = [[lat, lng]];
+            for (let k = 1; k <= mSteps; k++) {
+                mPoints.push(getDestinationPoint(lat, lng, az, (drawDistKm / mSteps) * k));
+            }
+            L.polyline(mPoints, { color: '#ddaaff', weight: 1.0, opacity: 0.4, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
+
+            const sPx = map.latLngToContainerPoint([lat, lng]);
+            const rH = 90;
+            const labelPos = map.containerPointToLatLng(L.point(
+                sPx.x + Math.sin(az) * rH,
+                sPx.y - Math.cos(az) * rH
+            ));
+
             L.marker(labelPos, {
                 icon: L.divIcon({
                     className: 'transparent-icon',
-                    html: `<div style="color: #ddaaff; font-weight: 600; font-size: 0.75rem; text-shadow: 0px 1px 3px rgba(0,0,0,0.9); transform: translate(-50%, -50%); white-space: nowrap;">${getDisplayTimeStr(currentMHourTime, mT1)}</div>`,
+                    html: `<div style="color: #ddaaff; font-weight: 600; font-size: 0.75rem; text-shadow: 0px 1px 3px rgba(0,0,0,0.9); transform: translate(-50%, -50%); white-space: nowrap;">${getDisplayTimeStr(actualMDate.getTime(), mT1)}</div>`,
                     iconSize: [0, 0]
                 }),
                 interactive: false
@@ -521,8 +579,14 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
         if (pos.altitude <= 0) return;
         const az = pos.azimuth + Math.PI;
         const azDeg = (az * 180 / Math.PI) % 360;
-        const end = getDestinationPoint(lat, lng, az, drawDistKm);
-        L.polyline([[lat, lng], end], { color, weight: type === 'sun' ? 4 : 3, opacity: 1.0 }).addTo(layerGroup);
+        
+        // Geodesic subdivision for real-time solid lines
+        const posSteps = 50;
+        const posPoints = [[lat, lng]];
+        for (let i = 1; i <= posSteps; i++) {
+            posPoints.push(getDestinationPoint(lat, lng, az, (drawDistKm / posSteps) * i));
+        }
+        L.polyline(posPoints, { color, weight: type === 'sun' ? 4 : 3, opacity: 1.0 }).addTo(layerGroup);
 
         const dist = type === 'sun' ? 120 : 100;
         const labelPos = map.containerPointToLatLng(L.point(startPx.x + Math.sin(az) * dist, startPx.y - Math.cos(az) * dist));
@@ -557,7 +621,7 @@ function updateHoverData(lat, lng, sunTimes, moonTimes) {
         let mT2_raw = moonTimes.set ? moonTimes.set.getTime() : null;
         let mT1 = mT1_raw || (mT2_raw - 43200000);
         let mT2 = mT2_raw || (mT1_raw + 43200000);
-        
+
         if (mT1 > mT2) {
             const tmr = SunCalc.getMoonTimes(new Date(mT1 + 86400000), lat, lng);
             mT2 = tmr.set ? tmr.set.getTime() : mT1 + 43200000;
@@ -577,11 +641,19 @@ function computeAndDraw(lat, lng, layerGroup, isMain = true) {
     const sunTimes = SunCalc.getTimes(state.selectedDate, lat, lng);
     const moonTimes = SunCalc.getMoonTimes(state.selectedDate, lat, lng);
     const t = i18n[state.currentLang];
-    
+
     const bounds = map.getBounds();
     const diag = map.distance(bounds.getNorthEast(), bounds.getSouthWest());
-    state.drawDistKm = (diag * 1.5) / 1000;
-    state.radiusKm = (diag * 0.2) / 1000;
+    
+    // Cap distances to avoid wrap-around distortions and clumping at world-scale zoom
+    // drawDistKm should be long enough to reach edges, but not exceed Earth circumference (40,000km)
+    state.drawDistKm = Math.min(18000, (diag * 1.2) / 1000);
+    
+    // Label radius (fan size) should stay visually within the map's viewport but not disappear
+    state.radiusKm = Math.min(4000, (diag * 0.22) / 1000);
+    
+    // Ensure radius doesn't become too small for labels to be readable when zoomed in
+    if (state.radiusKm < 0.1) state.radiusKm = 0.1;
 
     if (isMain) {
         updateAstronomyTimesUI(sunTimes, moonTimes);
@@ -604,7 +676,7 @@ function redrawAll() {
     mainLayerGroup.clearLayers();
     extraPinsGroup.clearLayers();
     if (hoverLayer) hoverLayer.clearLayers();
-    
+
     if (!state.mainAnchorLatLng) {
         elements.sunRiseValue.innerText = '--:--';
         elements.sunSetValue.innerText = '--:--';
@@ -614,17 +686,17 @@ function redrawAll() {
     }
 
     computeAndDraw(state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng, mainLayerGroup, true);
-    
+
     const p1 = map.project(state.mainAnchorLatLng);
     const t = i18n[state.currentLang];
-    
+
     state.targetPins.forEach(pin => {
         const marker = L.circleMarker([pin.lat, pin.lng], { radius: 8, fillColor: '#32CD32', color: '#fff', weight: 2, opacity: 1, fillOpacity: 1, bubblingMouseEvents: false }).addTo(extraPinsGroup);
         const p2 = map.project([pin.lat, pin.lng]);
         const bearing = (Math.atan2(p2.x - p1.x, p1.y - p2.y) * 180 / Math.PI + 360) % 360;
 
         const labelHtml = `<div class="target-pin-label" style="background: #32CD32; color: white; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 3px 8px rgba(0,0,0,0.4); pointer-events: auto; cursor: pointer; border: 2px solid white; white-space: nowrap; display: inline-block;">${t.pin_label_prefix}${pin.index} (${bearing.toFixed(1)}°)</div>`;
-        
+
         const labelMarker = L.marker([pin.lat, pin.lng], {
             icon: L.divIcon({
                 className: 'transparent-icon',
@@ -637,7 +709,7 @@ function redrawAll() {
         const deleteHandler = (e) => { L.DomEvent.stopPropagation(e); removeTargetPin(pin.id); };
         marker.on('click', deleteHandler);
         labelMarker.on('click', deleteHandler);
-        
+
         marker.bindTooltip(`${t.pin_aim}${bearing.toFixed(1)}°`, { direction: 'top' });
         L.polyline([[state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng], [pin.lat, pin.lng]], { color: '#32CD32', weight: 2, opacity: 0.7, dashArray: '4, 8' }).addTo(extraPinsGroup);
     });
@@ -663,7 +735,7 @@ function setAnchor(latlng) {
     state.mainAnchorLatLng = latlng;
     if (!mainAnchorMarker) mainAnchorMarker = L.marker(latlng, { icon: anchorIcon, interactive: false }).addTo(map);
     else mainAnchorMarker.setLatLng(latlng);
-    
+
     redrawAll();
 
     const t = i18n[state.currentLang];
@@ -736,7 +808,7 @@ function updateLanguage(lang) {
             else el.innerText = t[key];
         }
     });
-    
+
     const isLight = document.body.classList.contains('light-mode');
     if (state.isManualTheme) elements.themeToggleBtn.innerText = isLight ? t.theme_light : t.theme_dark;
     else elements.themeToggleBtn.innerText = isLight ? t.theme_auto_day : t.theme_auto_night;
@@ -758,16 +830,16 @@ function drawMoonSVG(phase) {
     let path = '';
     if (phase <= 0.25) {
         let rx = r - (phase / 0.25) * r;
-        path = `M 50 ${50-r} A ${r} ${r} 0 0 1 50 ${50+r} A ${Math.max(rx, 0.1)} ${r} 0 0 0 50 ${50-r}`;
+        path = `M 50 ${50 - r} A ${r} ${r} 0 0 1 50 ${50 + r} A ${Math.max(rx, 0.1)} ${r} 0 0 0 50 ${50 - r}`;
     } else if (phase <= 0.5) {
         let rx = ((phase - 0.25) / 0.25) * r;
-        path = `M 50 ${50-r} A ${r} ${r} 0 0 1 50 ${50+r} A ${Math.max(rx, 0.1)} ${r} 0 0 1 50 ${50-r}`;
+        path = `M 50 ${50 - r} A ${r} ${r} 0 0 1 50 ${50 + r} A ${Math.max(rx, 0.1)} ${r} 0 0 1 50 ${50 - r}`;
     } else if (phase <= 0.75) {
         let rx = r - ((phase - 0.5) / 0.25) * r;
-        path = `M 50 ${50-r} A ${r} ${r} 0 0 0 50 ${50+r} A ${Math.max(rx, 0.1)} ${r} 0 0 0 50 ${50-r}`;
+        path = `M 50 ${50 - r} A ${r} ${r} 0 0 0 50 ${50 + r} A ${Math.max(rx, 0.1)} ${r} 0 0 0 50 ${50 - r}`;
     } else {
         let rx = ((phase - 0.75) / 0.25) * r;
-        path = `M 50 ${50-r} A ${r} ${r} 0 0 0 50 ${50+r} A ${Math.max(rx, 0.1)} ${r} 0 0 1 50 ${50-r}`;
+        path = `M 50 ${50 - r} A ${r} ${r} 0 0 0 50 ${50 + r} A ${Math.max(rx, 0.1)} ${r} 0 0 1 50 ${50 - r}`;
     }
     return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#111"/><path d="${path}" fill="#fff"/></svg>`;
 }
@@ -804,7 +876,7 @@ function renderCalendar() {
         cell.innerHTML += `<span class="day-num" style="font-weight:700; font-size:1.1rem;">${d}</span>`;
         cell.innerHTML += `<div class="moon-svg" style="width:36px; height:36px; margin:4px 0;">${drawMoonSVG(moonIllum.phase)}</div>`;
         cell.innerHTML += `<span class="phase-pct">${(moonIllum.fraction * 100).toFixed(1)}%</span>`;
-        
+
         if (moonIllum.fraction > 0.99 || moonIllum.fraction < 0.01) {
             const color = moonIllum.fraction > 0.99 ? '#ffd700' : '#d8bfd8';
             cell.innerHTML += `<div style="margin-top:4px; display:flex; justify-content:center; width:100%;"><span class="peak-time" style="font-size:0.7rem; color:${color}; background:#000; padding:1px 6px; border-radius:10px; font-weight:700; border:1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 4px rgba(0,0,0,0.5);">04:32</span></div>`;
@@ -921,7 +993,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const initNow = new Date();
     const roughTimes = SunCalc.getTimes(initNow, DEFAULT_LOC[0], DEFAULT_LOC[1]);
     const isDay = roughTimes.sunrise && roughTimes.sunset && (initNow >= roughTimes.sunrise && initNow <= roughTimes.sunset);
-    
+
     state.showSun = isDay;
     state.showMoon = !isDay;
     elements.chkDay.checked = state.showSun;

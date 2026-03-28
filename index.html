@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,18 +12,19 @@
     <meta name="theme-color" content="#1a1a2e">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZLKFN8G3G5"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZLKFN8G3G5');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-ZLKFN8G3G5');
     </script>
 </head>
+
 <body>
     <div class="sidebar">
         <header>
@@ -31,14 +33,16 @@
                 <button id="theme-toggle-btn" class="theme-btn">🌓 자동</button>
             </div>
             <p id="location-text" data-i18n="loc_fetching">위치 정보를 가져오는 중...</p>
-            <p class="help-text" data-i18n="help_text">🗺️ <b>지도 조작 가이드</b><br>📍 <b>좌클릭</b>: 원하는 지점을 클릭하면 그곳이 분석의 <b>기준점</b>(내 위치)이 됩니다.<br>🎯 <b>우클릭 / 롱터치</b>: 기준점 설정 후 다른 곳을 조작하면 <b>목표 지점</b>까지의 직선과 방위각 핀이 생성됩니다.<br>✨ 기준점을 먼저 세워야 목표 핀을 꽂을 수 있습니다!</p>
+            <p class="help-text" data-i18n="help_text">🗺️ <b>지도 조작 가이드</b><br>📍 <b>좌클릭</b>: 원하는 지점을 클릭하면 그곳이 분석의
+                <b>기준점</b>(내 위치)이 됩니다.<br>🎯 <b>우클릭 / 롱터치</b>: 기준점 설정 후 다른 곳을 조작하면 <b>목표 지점</b>까지의 직선과 방위각 핀이
+                생성됩니다.<br>✨ 기준점을 먼저 세워야 목표 핀을 꽂을 수 있습니다!</p>
         </header>
 
         <div class="date-container" id="date-selection-trigger">
             <label data-i18n="date_select" class="date-label">날짜 선택</label>
             <div class="date-input-wrapper">
                 <div class="date-display">
-                    <span id="date-value"></span> 
+                    <span id="date-value"></span>
                     <span id="date-day" class="date-day-span"></span>
                     <span class="date-icon">📅</span>
                 </div>
@@ -101,7 +105,8 @@
         </div>
 
         <footer class="sidebar-footer">
-            <p>&copy; 2026 <strong>daa-color-log</strong>. <span data-i18n="footer_all_rights">All rights reserved.</span></p>
+            <p>&copy; 2026 <strong>daa-color-log</strong>. <span data-i18n="footer_all_rights">All rights
+                    reserved.</span></p>
             <p class="license-info">
                 <span data-i18n="footer_license_prefix">Licensed under the </span><a href="LICENSE">MIT License</a>.
             </p>
@@ -125,7 +130,13 @@
                 <button id="close-calendar" class="secondary-btn">✕</button>
             </div>
             <div class="calendar-grid-header">
-                <div data-i18n="day_sun">일</div><div data-i18n="day_mon">월</div><div data-i18n="day_tue">화</div><div data-i18n="day_wed">수</div><div data-i18n="day_thu">목</div><div data-i18n="day_fri">금</div><div data-i18n="day_sat">토</div>
+                <div data-i18n="day_sun">일</div>
+                <div data-i18n="day_mon">월</div>
+                <div data-i18n="day_tue">화</div>
+                <div data-i18n="day_wed">수</div>
+                <div data-i18n="day_thu">목</div>
+                <div data-i18n="day_fri">금</div>
+                <div data-i18n="day_sat">토</div>
             </div>
             <div id="calendar-days" class="calendar-grid"></div>
         </div>
@@ -135,13 +146,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <script src="script.js"></script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered!'))
-            .catch(err => console.error('Service Worker registration failed:', err));
-        });
-      }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered!'))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
     </script>
 </body>
+
 </html>
