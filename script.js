@@ -1070,8 +1070,8 @@ window.addEventListener('DOMContentLoaded', () => {
     updateLanguage(state.currentLang);
     doLocate();
 
-    // Auto-refresh theme and tracks every minute
+    // Auto-refresh theme and tracks every 10 seconds
     setInterval(() => {
         if (state.mainAnchorLatLng) redrawAll();
-    }, 60000);
+    }, 10000);
 });
