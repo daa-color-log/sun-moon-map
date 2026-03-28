@@ -11,8 +11,10 @@
 
 body.light-mode {
     --bg-glass: rgba(250, 250, 255, 0.85);
-    --border-glass: rgba(0, 0, 0, 0.08); /* Finer border for light mode */
-    --bg-item: rgba(0, 0, 0, 0.04);      /* Subtle item background */
+    --border-glass: rgba(0, 0, 0, 0.08);
+    /* Finer border for light mode */
+    --bg-item: rgba(0, 0, 0, 0.04);
+    /* Subtle item background */
     --text-primary: #111111;
     --text-secondary: #555555;
     --accent-sun: #e65c00;
@@ -401,6 +403,28 @@ header {
     font-size: 0.75rem;
     border-top: 1px solid var(--border-glass);
     opacity: 0.6;
+}
+
+.footer-actions {
+    margin: 15px 0;
+}
+
+.footer-btn {
+    background: rgba(255, 120, 0, 0.1);
+    color: var(--accent-sun);
+    border: 1px solid var(--border-glass);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.footer-btn:hover {
+    background: var(--accent-sun);
+    color: white;
 }
 
 .license-info {

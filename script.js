@@ -95,7 +95,8 @@ const i18n = {
         location_settings: "위치 설정",
         language_settings: "언어 설정",
         toggle_permanent: "해/달 위치정보 항상 표시",
-        pin_label_prefix: "기준점 "
+        pin_label_prefix: "기준점 ",
+        btn_refresh: "화면 오류 해결 (최신 버전 동기화)"
     },
     en: {
         title: "Sun & Moon Map",
@@ -145,7 +146,8 @@ const i18n = {
         location_settings: "Location Settings",
         language_settings: "Language Settings",
         toggle_permanent: "Always show Sun/Moon position",
-        pin_label_prefix: "Point "
+        pin_label_prefix: "Point ",
+        btn_refresh: "Fix Display Issues (Latest Version Sync)"
     },
     ja: {
         title: "太陽と月の地図",
@@ -195,7 +197,8 @@ const i18n = {
         location_settings: "位置設定",
         language_settings: "言語設定",
         toggle_permanent: "太陽/月の位置情報を常に表示",
-        pin_label_prefix: "基準点 "
+        pin_label_prefix: "基準点 ",
+        btn_refresh: "表示エラーの解決 (最新版に同期)"
     },
     zh: {
         title: "日月地图",
@@ -245,7 +248,8 @@ const i18n = {
         location_settings: "位置设置",
         language_settings: "语言设置",
         toggle_permanent: "始终显示日/月位置信息",
-        pin_label_prefix: "目标点 "
+        pin_label_prefix: "目标点 ",
+        btn_refresh: "修复显示问题 (同步最新版本)"
     },
     fr: {
         title: "Carte Soleil & Lune",
@@ -295,7 +299,8 @@ const i18n = {
         location_settings: "Paramètres de localisation",
         language_settings: "Paramètres de langue",
         toggle_permanent: "Toujours afficher position Soleil/Lune",
-        pin_label_prefix: "Point "
+        pin_label_prefix: "Point ",
+        btn_refresh: "Résoudre les erreurs d'affichage (Sync)"
     }
 };
 
@@ -332,12 +337,12 @@ function getDestinationPoint(lat, lng, azimuthRadians, distanceKm) {
 
 function getEstimatedLocalTime(utcDate, anchorLng) {
     if (!utcDate || isNaN(utcDate.getTime())) return null;
-    
+
     // Viewer's current local timezone offset in minutes (e.g. +540 for Korea)
     const viewerOffsetMin = -new Date().getTimezoneOffset();
     // Browser's "Natural" longitude for its whole-hour timezone (15 deg = 1 hour)
     const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
-    
+
     // Calculate the 'Time Shift' relative to the browser's local time base
     // This estimates the local clock time of the anchor location.
     const timeShiftMin = (anchorLng - browserBaseLng) * 4;
@@ -348,7 +353,7 @@ function formatTime(dateObject) {
     if (!dateObject || isNaN(dateObject.getTime())) return i18n[state.currentLang].today_none;
     const lng = state.mainAnchorLatLng ? state.mainAnchorLatLng.lng : 0;
     const local = getEstimatedLocalTime(dateObject, lng);
-    
+
     // Return the formatted HH:mm of the estimated local time
     return local.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
@@ -357,14 +362,14 @@ function getDisplayTimeStr(timestamp, baseTimestamp, showMinutes = false) {
     const lng = state.mainAnchorLatLng ? state.mainAnchorLatLng.lng : 0;
     const local = getEstimatedLocalTime(new Date(timestamp), lng);
     const baseLocal = getEstimatedLocalTime(new Date(baseTimestamp), lng);
-    
+
     if (!local) return '';
 
     // Calculate day diff in estimated local time
     const dZero = new Date(local); dZero.setHours(0, 0, 0, 0);
     const bZero = new Date(baseLocal); bZero.setHours(0, 0, 0, 0);
     const dayDiff = Math.round((dZero - bZero) / 86400000);
-    
+
     const displayHour = local.getHours() + (dayDiff * 24);
     const mm = String(local.getMinutes()).padStart(2, '0');
 
@@ -383,7 +388,7 @@ function drawLineWithLabel(start, azimuth, color, labelText, layerGroup, drawDis
 
     // Standardized Pixel-based positioning for labels to prevent 'gathering' or 'disappearing'
     const startPx = map.latLngToContainerPoint(start);
-    const rPx = 160; 
+    const rPx = 160;
     const labelPos = map.containerPointToLatLng(L.point(
         startPx.x + Math.sin(azimuth) * rPx,
         startPx.y - Math.cos(azimuth) * rPx
@@ -447,15 +452,15 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
     const viewerOffsetMin = -new Date().getTimezoneOffset();
     const browserBaseLng = Math.round(viewerOffsetMin / 60) * 15;
     const timeShiftMs = (lng - browserBaseLng) * 4 * 60 * 1000;
-    
+
     const sunriseLocal = new Date(t1 + timeShiftMs);
     const startHourLocal = new Date(sunriseLocal);
     startHourLocal.setMinutes(0, 0, 0);
-    
+
     for (let curLocalTime = startHourLocal.getTime() + 3600000; (curLocalTime - timeShiftMs) < t2; curLocalTime += 3600000) {
         const actualDate = new Date(curLocalTime - timeShiftMs);
         const az = SunCalc.getPosition(actualDate, lat, lng).azimuth + Math.PI;
-        
+
         // Move hourly markers and labels to the center of the yellow fan
         const trackSteps = 20;
         const trackPoints = [[lat, lng]];
@@ -464,7 +469,7 @@ function drawSunTrack(lat, lng, sunTimes, layerGroup, radiusKm, drawDistKm) {
             trackPoints.push(getDestinationPoint(lat, lng, az, (radiusKm / trackSteps) * j));
         }
         L.polyline(trackPoints, { color: '#ffffff', weight: 1.5, opacity: 0.6, dashArray: '2, 4', interactive: false }).addTo(layerGroup);
-        
+
         // Position labels exactly at the midpoint of the fan radius
         const labelPos = getDestinationPoint(lat, lng, az, radiusKm * 0.5);
 
@@ -570,7 +575,7 @@ function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
         if (pos.altitude <= 0) return;
         const az = pos.azimuth + Math.PI;
         const azDeg = (az * 180 / Math.PI) % 360;
-        
+
         // Geodesic subdivision for real-time solid lines
         const posSteps = 50;
         const posPoints = [[lat, lng]];
@@ -642,14 +647,14 @@ function computeAndDraw(lat, lng, layerGroup, isMain = true) {
 
     const bounds = map.getBounds();
     const diag = map.distance(bounds.getNorthEast(), bounds.getSouthWest());
-    
+
     // Cap distances to avoid wrap-around distortions and clumping at world-scale zoom
     // drawDistKm should be long enough to reach edges, but not exceed Earth circumference (40,000km)
     state.drawDistKm = Math.min(18000, (diag * 1.2) / 1000);
-    
+
     // Label radius (fan size) should stay visually within the map's viewport but not disappear
     state.radiusKm = Math.min(4000, (diag * 0.22) / 1000);
-    
+
     // Ensure radius doesn't become too small for labels to be readable when zoomed in
     if (state.radiusKm < 0.1) state.radiusKm = 0.1;
 
@@ -930,6 +935,18 @@ function initEventListeners() {
         updateDateDisplay();
         if (state.mainAnchorLatLng) redrawAll();
         renderCalendar();
+    };
+    
+    document.getElementById('force-update-btn').onclick = async () => {
+        if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let reg of regs) await reg.unregister();
+        }
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            for (let k of keys) await caches.delete(k);
+        }
+        window.location.reload(true);
     };
 
     map.on('click', (e) => setAnchor(e.latlng));
