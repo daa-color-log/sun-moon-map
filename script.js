@@ -26,7 +26,8 @@ const elements = {
     get prevMonth() { return document.getElementById('prev-month'); },
     get nextMonth() { return document.getElementById('next-month'); },
     get goToToday() { return document.getElementById('go-to-today'); },
-    get dateSelectionTrigger() { return document.getElementById('date-selection-trigger'); }
+    get dateSelectionTrigger() { return document.getElementById('date-selection-trigger'); },
+    get manualTrackNotice() { return document.getElementById('manual-track-notice'); }
 };
 
 // --- App State ---
@@ -37,6 +38,8 @@ const state = {
     viewDate: new Date(),
     currentLang: localStorage.getItem('appLang') || 'en',
     isManualTheme: false,
+    isManualTrack: false,
+    lastManualTrackTime: 0,
     mainAnchorLatLng: null,
     targetPins: [],
     hoverTimeData: [],
@@ -96,7 +99,8 @@ const i18n = {
         language_settings: "언어 설정",
         toggle_permanent: "해/달 위치정보 항상 표시",
         pin_label_prefix: "기준점 ",
-        btn_refresh: "↻ 화면 오류 해결 (최신 버전 동기화)"
+        btn_refresh: "↻ 화면 오류 해결 (최신 버전 동기화)",
+        manual_track_info: "⚠️ 수동 모드: 5분간 변화 없으면 자동 복귀"
     },
     en: {
         title: "Sun & Moon Map",
@@ -147,7 +151,8 @@ const i18n = {
         language_settings: "Language Settings",
         toggle_permanent: "Always show Sun/Moon position",
         pin_label_prefix: "Point ",
-        btn_refresh: "↻ Fix Display Issues (Sync Latest)"
+        btn_refresh: "↻ Fix Display Issues (Sync Latest)",
+        manual_track_info: "⚠️ Manual Mode: Auto-revert after 5 mins"
     },
     ja: {
         title: "太陽と月の地図",
@@ -198,7 +203,8 @@ const i18n = {
         language_settings: "言語設定",
         toggle_permanent: "太陽/月の位置情報を常に表示",
         pin_label_prefix: "基準点 ",
-        btn_refresh: "↻ 表示エラーの解決 (最新版に同期)"
+        btn_refresh: "↻ 表示エラーの解決 (最新版に同期)",
+        manual_track_info: "⚠️ 手動モード: 5分間操作がないと自動に戻ります"
     },
     zh: {
         title: "日月地图",
@@ -249,7 +255,8 @@ const i18n = {
         language_settings: "语言设置",
         toggle_permanent: "始终显示日/月位置信息",
         pin_label_prefix: "目标点 ",
-        btn_refresh: "↻ 修复显示问题 (同步最新版本)"
+        btn_refresh: "↻ 修复显示问题 (同步最新版本)",
+        manual_track_info: "⚠️ 手动模式：5分钟无操作后自动恢复"
     },
     fr: {
         title: "Carte Soleil & Lune",
@@ -300,7 +307,8 @@ const i18n = {
         language_settings: "Paramètres de langue",
         toggle_permanent: "Toujours afficher position Soleil/Lune",
         pin_label_prefix: "Point ",
-        btn_refresh: "↻ Résoudre les erreurs d'affichage (Sync)"
+        btn_refresh: "↻ Résoudre les erreurs d'affichage (Sync)",
+        manual_track_info: "⚠️ Mode Manuel: Retour auto après 5 min"
     }
 };
 
@@ -418,9 +426,25 @@ function handleAutoTheme(lat, lng) {
     if (state.isManualTheme) return;
     const now = new Date();
     const times = SunCalc.getTimes(now, lat, lng);
-    const isDaytime = now >= times.sunrise && now <= times.sunset;
-    const t = i18n[state.currentLang];
+    const isDaytime = !!(times.sunrise && times.sunset && (now >= times.sunrise && now <= times.sunset));
 
+    // Sync track visibility with auto-theme (unless manually overridden within last 5 minutes)
+    const manualTimeout = 5 * 60 * 1000;
+    if (state.isManualTrack && (now - state.lastManualTrackTime > manualTimeout)) {
+        state.isManualTrack = false;
+    }
+
+    if (!state.isManualTrack) {
+        state.showSun = isDaytime;
+        state.showMoon = !isDaytime;
+        if (elements.chkDay) elements.chkDay.checked = state.showSun;
+        if (elements.chkMoon) elements.chkMoon.checked = state.showMoon;
+        if (elements.manualTrackNotice) elements.manualTrackNotice.classList.add('hidden');
+    } else {
+        if (elements.manualTrackNotice) elements.manualTrackNotice.classList.remove('hidden');
+    }
+
+    const t = i18n[state.currentLang];
     if (isDaytime) {
         document.body.classList.add('light-mode');
         tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png');
@@ -901,8 +925,18 @@ function renderCalendar() {
 // --- Event Listeners ---
 
 function initEventListeners() {
-    elements.chkDay.addEventListener('change', (e) => { state.showSun = e.target.checked; redrawAll(); });
-    elements.chkMoon.addEventListener('change', (e) => { state.showMoon = e.target.checked; redrawAll(); });
+    elements.chkDay.addEventListener('change', (e) => {
+        state.isManualTrack = true;
+        state.lastManualTrackTime = Date.now();
+        state.showSun = e.target.checked;
+        redrawAll();
+    });
+    elements.chkMoon.addEventListener('change', (e) => {
+        state.isManualTrack = true;
+        state.lastManualTrackTime = Date.now();
+        state.showMoon = e.target.checked;
+        redrawAll();
+    });
     elements.chkPermanent.addEventListener('change', (e) => { state.showPermanentTooltips = e.target.checked; redrawAll(); });
     elements.datePicker.addEventListener('change', (e) => {
         if (e.target.value) { state.selectedDate = new Date(e.target.value); updateDateDisplay(); redrawAll(); }
@@ -1019,4 +1053,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     updateLanguage(state.currentLang);
     doLocate();
+
+    // Auto-refresh theme and tracks every minute
+    setInterval(() => {
+        if (state.mainAnchorLatLng) redrawAll();
+    }, 60000);
 });
