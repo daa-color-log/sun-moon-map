@@ -20,24 +20,18 @@
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
       "src": "screenshot-mobile.png",
-      "sizes": "390x844",
+      "sizes": "500x749",
       "type": "image/png",
       "label": "Mobile View of Celestial Map"
     },
     {
       "src": "screenshot-desktop.png",
-      "sizes": "1280x800",
+      "sizes": "1264x705",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop View of Celestial Map"
