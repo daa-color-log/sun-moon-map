@@ -1,7 +1,7 @@
 {
   "name": "Celestial Map",
   "short_name": "Celestial Map",
-  "description": "Interactive Sun & Moon tracking Web Application",
+  "description": "Premium Sun & Moon tracking Application featuring interactive maps and astronomical trajectory data.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -11,13 +11,13 @@
   "icons": [
     {
       "src": "icon-192.png",
-      "sizes": "192x192",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "icon-512.png",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
@@ -25,7 +25,22 @@
       "src": "logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Mobile View of Celestial Map"
+    },
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop View of Celestial Map"
     }
   ]
 }

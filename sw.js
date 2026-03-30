@@ -1,4 +1,4 @@
-const CACHE_NAME = 'celestial-map-v3.1';
+const CACHE_NAME = 'celestial-map-v3.2';
 const ASSETS = [
   './',
   'index.html',
@@ -7,6 +7,8 @@ const ASSETS = [
   'logo.svg',
   'icon-192.png',
   'icon-512.png',
+  'screenshot-desktop.png',
+  'screenshot-mobile.png',
   'manifest.json'
 ];
 
