@@ -1,5 +1,6 @@
-const CACHE_NAME = 'celestial-map-v2.7';
+const CACHE_NAME = 'celestial-map-v2.8';
 const ASSETS = [
+  './',
   'index.html',
   'style.css',
   'script.js',
@@ -38,6 +39,16 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  
+  // Handle root path mapping to index.html in cache
+  if (url.pathname === '/' || url.pathname.endsWith('/')) {
+    e.respondWith(
+      caches.match('index.html').then((response) => response || fetch(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request))
   );
