@@ -1083,16 +1083,33 @@ function initEventListeners() {
         renderCalendar();
     };
     
-    document.getElementById('force-update-btn').onclick = async () => {
-        if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for (let reg of regs) await reg.unregister();
+    document.getElementById('force-update-btn').onclick = async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = 'Updating...';
+
+        try {
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) {
+                    await reg.unregister();
+                }
+            }
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                for (let k of keys) {
+                    await caches.delete(k);
+                }
+            }
+            // Force reload by adding a timestamp to bypass HTTP cache
+            const url = new URL(window.location.href);
+            url.searchParams.set('update', Date.now());
+            window.location.href = url.toString();
+        } catch (err) {
+            console.error('Update failed:', err);
+            window.location.reload();
         }
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            for (let k of keys) await caches.delete(k);
-        }
-        window.location.reload(true);
     };
 
     map.on('click', (e) => setAnchor(e.latlng));
