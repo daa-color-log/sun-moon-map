@@ -45,7 +45,9 @@ const state = {
     hoverTimeData: [],
     drawDistKm: 2000,
     radiusKm: 10,
-    showPermanentTooltips: true
+    showPermanentTooltips: true,
+    showCompass: false,
+    currentHeading: null
 };
 
 // --- i18n Data ---
@@ -319,6 +321,7 @@ L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 const mainLayerGroup = L.layerGroup().addTo(map);
 const extraPinsGroup = L.layerGroup().addTo(map);
+const compassLayerGroup = L.layerGroup().addTo(map);
 let hoverLayer = null;
 
 const anchorIcon = L.divIcon({
@@ -615,6 +618,29 @@ function drawMoonTrack(lat, lng, adjMoonTimes, sunTimes, layerGroup, radiusKm, d
     }
 }
 
+function drawCompassLine(lat, lng, layerGroup, headingDeg, drawDistKm) {
+    if (headingDeg === null) return;
+    const azimuthRad = headingDeg * Math.PI / 180;
+    const color = '#007AFF';
+
+    // Geodesic line
+    const steps = 60;
+    const points = [[lat, lng]];
+    for (let i = 1; i <= steps; i++) {
+        points.push(getDestinationPoint(lat, lng, azimuthRad, (drawDistKm / steps) * i));
+    }
+    L.polyline(points, { color, weight: 4, opacity: 0.9 }).addTo(layerGroup);
+
+    // Arrowhead at the tip
+    const tip = points[points.length - 1];
+    const arrowSizeKm = drawDistKm * 0.03;
+    const leftWing = getDestinationPoint(tip[0], tip[1], azimuthRad + (Math.PI * 0.85), arrowSizeKm);
+    const rightWing = getDestinationPoint(tip[0], tip[1], azimuthRad - (Math.PI * 0.85), arrowSizeKm);
+    
+    L.polygon([tip, leftWing, rightWing], { color: 'none', fillColor: color, fillOpacity: 1.0, interactive: false }).addTo(layerGroup);
+}
+
+
 function drawRealTimePositions(lat, lng, layerGroup, drawDistKm) {
     const now = new Date();
     const sunPos = SunCalc.getPosition(now, lat, lng);
@@ -725,11 +751,16 @@ function computeAndDraw(lat, lng, layerGroup, isMain = true) {
     if (isToday) {
         drawRealTimePositions(lat, lng, layerGroup, state.drawDistKm);
     }
+
+    if (state.showCompass && state.currentHeading !== null) {
+        drawCompassLine(lat, lng, compassLayerGroup, state.currentHeading, state.drawDistKm);
+    }
 }
 
 function redrawAll() {
     mainLayerGroup.clearLayers();
     extraPinsGroup.clearLayers();
+    compassLayerGroup.clearLayers();
     if (hoverLayer) hoverLayer.clearLayers();
 
     if (!state.mainAnchorLatLng) {
@@ -828,6 +859,22 @@ function ipFallback() {
 function doLocate(useAlert = false) {
     const t = i18n[state.currentLang];
     elements.locationText.innerHTML = t.gps_requesting;
+
+    // --- Compass Permission Request (iOS) ---
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    initOrientationListener();
+                }
+            })
+            .catch(console.error);
+    } else {
+        // Android or Non-iOS browsers usually don't need explicit permission here, 
+        // or they use older API styles.
+        initOrientationListener();
+    }
+
     if (!navigator.geolocation) {
         if (useAlert) alert(t.err_no_gps_support);
         else ipFallback();
@@ -847,6 +894,38 @@ function doLocate(useAlert = false) {
         },
         { enableHighAccuracy: true, timeout: useAlert ? 10000 : 5000, maximumAge: 0 }
     );
+}
+
+function initOrientationListener() {
+    state.showCompass = true;
+    
+    const handleOrientation = (event) => {
+        let heading = null;
+        
+        // iOS Compass
+        if (event.webkitCompassHeading) {
+            heading = event.webkitCompassHeading;
+        } 
+        // Android/Standard Absolute Orientation
+        else if (event.absolute && event.alpha !== null) {
+            // Standard compass (alpha is counter-clockwise, we need clockwise from North)
+            heading = 360 - event.alpha;
+        }
+
+        if (heading !== null) {
+            state.currentHeading = heading;
+            if (state.mainAnchorLatLng) {
+                compassLayerGroup.clearLayers();
+                drawCompassLine(state.mainAnchorLatLng.lat, state.mainAnchorLatLng.lng, compassLayerGroup, state.currentHeading, state.drawDistKm);
+            }
+        }
+    };
+
+    if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    } else if ('ondeviceorientation' in window) {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+    }
 }
 
 // --- UI Updates ---
