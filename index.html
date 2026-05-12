@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1a1a2e">
-    <link rel="manifest" href="manifest.json?v=11">
+    <link rel="manifest" href="manifest.json?v=12">
     <link rel="apple-touch-icon" href="icon-192-v2.png">
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -114,14 +114,12 @@
         </div>
 
         <footer class="sidebar-footer">
-            <p>&copy; 2026 <strong>daa-color-log</strong>. <span data-i18n="footer_all_rights">All rights reserved.</span></p>
-            <p class="license-info">
-                <span data-i18n="footer_license_prefix">Licensed under the </span><a href="LICENSE" target="_blank">MIT License</a>.
-            </p>
             <div class="footer-actions">
-                <button id="pwa-install-btn" class="install-btn-footer" style="display:none;" data-i18n="btn_install">📲 앱 설치</button>
                 <button id="force-update-btn" class="footer-btn" data-i18n="btn_refresh">↻ 화면 오류 해결 (최신 버전 동기화)</button>
+                <button id="pwa-install-btn" class="install-btn-footer" style="display:none;" data-i18n="btn_install">📲 앱 설치</button>
             </div>
+            <p class="footer-text" data-i18n="footer_copyright">© 2026 daa-color-log. All rights reserved.</p>
+            <p class="license-info" data-i18n="footer_license">Licensed under the MIT License.</p>
         </footer>
     </div>
 

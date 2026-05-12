@@ -901,9 +901,9 @@ header {
     background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     color: white;
     border: none;
-    padding: 10px 18px;
-    border-radius: 12px;
-    font-size: 0.9rem;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -911,7 +911,7 @@ header {
     border: 1px solid rgba(255, 255, 255, 0.1);
     white-space: nowrap;
     width: 100%;
-    margin-bottom: 8px;
+    margin-top: 8px;
 }
 
 .install-btn-footer:hover {
@@ -928,6 +928,8 @@ header {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-top: 12px;
+    margin-top: 15px;
+    gap: 10px;
 }
+
 

@@ -114,11 +114,11 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "위치 설정",
         language_settings: "언어 설정",
-        toggle_permanent: "해/달 위치정보 항상 표시",
-        pin_label_prefix: "기준점 ",
         btn_refresh: "↻ 화면 오류 해결 (최신 버전 동기화)",
         manual_track_info: "⚠️ 수동 모드: 5분간 변화 없으면 자동 복귀",
-        btn_install: "📲 앱 설치"
+        btn_install: "📲 앱 설치",
+        footer_copyright: "© 2026 <strong>daa-color-log</strong>. All rights reserved.",
+        footer_license: "Licensed under the <a href='LICENSE' target='_blank'>MIT License</a>."
     },
     en: {
         title: "Sun & Moon Map",
@@ -167,11 +167,11 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "Location Settings",
         language_settings: "Language Settings",
-        toggle_permanent: "Always show Sun/Moon position",
-        pin_label_prefix: "Point ",
         btn_refresh: "↻ Fix Display Issues (Sync Latest)",
         manual_track_info: "⚠️ Manual Mode: Auto-revert after 5 mins",
-        btn_install: "📲 Install App"
+        btn_install: "📲 Install App",
+        footer_copyright: "© 2026 <strong>daa-color-log</strong>. All rights reserved.",
+        footer_license: "Licensed under the <a href='LICENSE' target='_blank'>MIT License</a>."
     },
     ja: {
         title: "太陽と月の地図",
@@ -223,7 +223,10 @@ const i18n = {
         toggle_permanent: "太陽/月の位置情報を常に表示",
         pin_label_prefix: "基準点 ",
         btn_refresh: "↻ 表示エラーの解決 (最新版に同期)",
-        manual_track_info: "⚠️ 手動モード: 5分間操作がないと自動に戻ります"
+        manual_track_info: "⚠️ 手動モード: 5分間操作がないと自動に戻ります",
+        btn_install: "📲 アプリをインストール",
+        footer_copyright: "© 2026 <strong>daa-color-log</strong>. All rights reserved.",
+        footer_license: "Licensed under the <a href='LICENSE' target='_blank'>MIT License</a>."
     },
     zh: {
         title: "日月地图",
@@ -272,11 +275,11 @@ const i18n = {
         footer_license_prefix: "Licensed under the ",
         location_settings: "位置设置",
         language_settings: "语言设置",
-        toggle_permanent: "始终显示日/月位置信息",
-        pin_label_prefix: "目标点 ",
         btn_refresh: "↻ 修复显示问题 (同步最新版本)",
         manual_track_info: "⚠️ 手动模式：5分钟无操作后自动恢复",
-        btn_install: "📲 安装应用"
+        btn_install: "📲 安装应用",
+        footer_copyright: "© 2026 <strong>daa-color-log</strong>. All rights reserved.",
+        footer_license: "Licensed under the <a href='LICENSE' target='_blank'>MIT License</a>."
     },
     fr: {
         title: "Carte Soleil & Lune",
@@ -328,7 +331,10 @@ const i18n = {
         toggle_permanent: "Toujours afficher position Soleil/Lune",
         pin_label_prefix: "Point ",
         btn_refresh: "↻ Résoudre les erreurs d'affichage (Sync)",
-        manual_track_info: "⚠️ Mode Manuel: Retour auto après 5 min"
+        manual_track_info: "⚠️ Mode Manuel: Retour auto après 5 min",
+        btn_install: "📲 Installer l'App",
+        footer_copyright: "© 2026 <strong>daa-color-log</strong>. All rights reserved.",
+        footer_license: "Licensed under the <a href='LICENSE' target='_blank'>MIT License</a>."
     }
 };
 
