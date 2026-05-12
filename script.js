@@ -962,8 +962,7 @@ function updateLanguage(lang) {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) {
-            if (el.tagName === 'P' && key === 'help_text') el.innerHTML = t[key];
-            else el.innerText = t[key];
+            el.innerHTML = t[key];
         }
     });
 
