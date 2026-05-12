@@ -47,8 +47,23 @@ const state = {
     radiusKm: 10,
     showPermanentTooltips: true,
     showCompass: false,
-    currentHeading: null
+    currentHeading: null,
+    deferredPrompt: null
 };
+
+// --- PWA Install Logic ---
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    state.deferredPrompt = e;
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn) installBtn.style.display = 'flex';
+});
+
+window.addEventListener('appinstalled', () => {
+    state.deferredPrompt = null;
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn) installBtn.style.display = 'none';
+});
 
 // --- i18n Data ---
 const i18n = {
@@ -102,7 +117,8 @@ const i18n = {
         toggle_permanent: "해/달 위치정보 항상 표시",
         pin_label_prefix: "기준점 ",
         btn_refresh: "↻ 화면 오류 해결 (최신 버전 동기화)",
-        manual_track_info: "⚠️ 수동 모드: 5분간 변화 없으면 자동 복귀"
+        manual_track_info: "⚠️ 수동 모드: 5분간 변화 없으면 자동 복귀",
+        btn_install: "📲 앱 설치"
     },
     en: {
         title: "Sun & Moon Map",
@@ -154,7 +170,8 @@ const i18n = {
         toggle_permanent: "Always show Sun/Moon position",
         pin_label_prefix: "Point ",
         btn_refresh: "↻ Fix Display Issues (Sync Latest)",
-        manual_track_info: "⚠️ Manual Mode: Auto-revert after 5 mins"
+        manual_track_info: "⚠️ Manual Mode: Auto-revert after 5 mins",
+        btn_install: "📲 Install App"
     },
     ja: {
         title: "太陽と月の地図",
@@ -258,7 +275,8 @@ const i18n = {
         toggle_permanent: "始终显示日/月位置信息",
         pin_label_prefix: "目标点 ",
         btn_refresh: "↻ 修复显示问题 (同步最新版本)",
-        manual_track_info: "⚠️ 手动模式：5分钟无操作后自动恢复"
+        manual_track_info: "⚠️ 手动模式：5分钟无操作后自动恢复",
+        btn_install: "📲 安装应用"
     },
     fr: {
         title: "Carte Soleil & Lune",
@@ -1111,6 +1129,20 @@ function initEventListeners() {
             window.location.reload();
         }
     };
+
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn) {
+        installBtn.onclick = async () => {
+            if (state.deferredPrompt) {
+                state.deferredPrompt.prompt();
+                const { outcome } = await state.deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    state.deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            }
+        };
+    }
 
     map.on('click', (e) => setAnchor(e.latlng));
     map.on('contextmenu', (e) => {
