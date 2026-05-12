@@ -20,7 +20,13 @@
       "src": "icon-512-v2.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
@@ -29,14 +35,14 @@
       "sizes": "500x749",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Mobile View of Celestial Map"
+      "label": "Mobile View of Sun & Moon Map"
     },
     {
       "src": "screenshot-desktop.png",
       "sizes": "1264x705",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Desktop View of Celestial Map"
+      "label": "Desktop View of Sun & Moon Map"
     }
   ]
 }
