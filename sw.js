@@ -1,14 +1,11 @@
-const CACHE_NAME = 'celestial-map-v5.0';
+const CACHE_NAME = 'celestial-map-v6.0';
 const ASSETS = [
-  './',
   'index.html',
   'style.css',
   'script.js',
   'logo.svg',
   'icon-192-v2.png',
   'icon-512-v2.png',
-  'screenshot-desktop.png',
-  'screenshot-mobile.png',
   'manifest.json'
 ];
 
