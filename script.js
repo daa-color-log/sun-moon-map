@@ -1108,29 +1108,39 @@ function initEventListeners() {
     
     document.getElementById('force-update-btn').onclick = async (e) => {
         const btn = e.currentTarget;
-        const originalText = btn.innerText;
+        const t = i18n[state.currentLang];
         btn.disabled = true;
-        btn.innerText = 'Updating...';
+        btn.innerText = 'Syncing...';
 
         try {
+            // 1. Force network cache update for key files
+            const cacheBustFiles = ['./', './index.html', './sw.js', './manifest.json?v=13'];
+            await Promise.all(cacheBustFiles.map(file => 
+                fetch(file, { cache: 'reload', mode: 'no-cors' }).catch(() => {})
+            ));
+
+            // 2. Unregister Service Workers
             if ('serviceWorker' in navigator) {
                 const regs = await navigator.serviceWorker.getRegistrations();
                 for (let reg of regs) {
                     await reg.unregister();
                 }
             }
+
+            // 3. Clear Cache Storage
             if ('caches' in window) {
                 const keys = await caches.keys();
                 for (let k of keys) {
                     await caches.delete(k);
                 }
             }
-            // Force reload by adding a timestamp to bypass HTTP cache
+
+            // 4. Final aggressive reload
             const url = new URL(window.location.href);
-            url.searchParams.set('update', Date.now());
-            window.location.href = url.toString();
+            url.searchParams.set('t', Date.now());
+            window.location.replace(url.toString());
         } catch (err) {
-            console.error('Update failed:', err);
+            console.error('Aggressive update failed:', err);
             window.location.reload();
         }
     };
