@@ -1,4 +1,4 @@
-const CACHE_NAME = 'celestial-map-v8.0';
+const CACHE_NAME = 'celestial-map-v9.0';
 const ASSETS = [
   './',
   'index.html',

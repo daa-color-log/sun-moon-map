@@ -1,8 +1,9 @@
 {
-  "name": "Celestial Map",
-  "short_name": "Celestial Map",
+  "id": "/sun-moon-map/",
+  "name": "Sun & Moon Map",
+  "short_name": "Sun & Moon Map",
   "description": "Premium Sun & Moon tracking Application featuring interactive maps and astronomical trajectory data.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1a1a2e",
